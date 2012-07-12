@@ -9,20 +9,21 @@ var nodemailer = require("nodemailer");
 
 // create reusable transport method (opens pool of SMTP connections)
 var smtpTransport = nodemailer.createTransport("SMTP",{
-    service: mailer_host,
-    auth: {
-        user: mailer_user,
-        pass: mailer_password
-    }
+    host: mailer_host,
+//    auth: {
+//        user: mailer_user,
+//        pass: mailer_password
+//    },
+    debug: true
 });
 
 // setup e-mail data with unicode symbols
 var mailOptions = {
     from: "Sender Name ✔ <sender@example.com>", // sender address
-    to: "jmarca@translab.its.uci.edu, james@activimetrics.com", // list of receivers
+    to: "crindt@gmail.com, jmarca@translab.its.uci.edu, james@activimetrics.com", // list of receivers
     subject: "Hello ✔", // Subject line
-    text: "Hello world ✔", // plaintext body
-    html: "<b>Hello world ✔</b>" // html body
+    text: "Hello world ✔ from nodemailer", // plaintext body
+    html: "<b>Hello world ✔ from nodemailer</b>" // html body
 }
 
 // send mail with defined transport object
