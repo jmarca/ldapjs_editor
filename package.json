@@ -10,10 +10,15 @@
       "ldapjs":"*",
       "underscore":"*",
       "async":"*",
-      "magical_email_generator":"*",
       "openldap_ssha":"*",
       "nodemailer":"*"
   },
+    "devDependencies":{
+        "mocha":"*",
+        "express":"*",
+        "supertest":"*",
+        "should":"*"
+    },
   "author": "James E. Marca",
   "license": "MIT"
 }
