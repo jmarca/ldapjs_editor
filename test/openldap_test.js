@@ -260,5 +260,13 @@ describe('openldap ldapjs_editor',function(){
                                               });
     })
 
+    it('should get a list of all users',function(){
+        ctmldap.loadUsers(null,null,function(err,users){
+            should.not.exist(err)
+            should.exist(users)
+            // need a better test here for making sure I got a proper list of users
+            console.log(users.length)
+            users.length.should.have.length(50) // this will fail
+
 });
 
