@@ -79,28 +79,26 @@ describe('ldapjs_editor',function(){
                                       }},null,function(err,user){
                                                   should.not.exist(err);
                                                   should.exist(user);
-                                                  it('should auto generate a new password',function(don){
-                                                      ctmldap.resetPassword({params:{'uid':'more trouble'}}
-                                                                           ,null
-                                                                           ,function(err,barePassword){
-                                                                                should.not.exist(err)
-                                                                                should.exist(barePassword)
-                                                                                ctmldap.loadUser({params:{'uid':'more trouble'}}
-                                                                                                ,function(err,user){
-                                                                                                     should.not.exist(err)
-                                                                                                     ssha.checkssha(barePassword
-                                                                                                                   ,user.userpassword
-                                                                                                                   ,function(err,result){
-                                                                                                                        should.not.exist(err);
-                                                                                                                        should.exist(result);
-                                                                                                                        result.should.equal(true);
-                                                                                                                        don()
-                                                                                                                        done()
+                                                  ctmldap.resetPassword({params:{'uid':'more trouble'}}
+                                                                       ,null
+                                                                       ,function(err,barePassword){
+                                                                            should.not.exist(err)
+                                                                            should.exist(barePassword)
+                                                                            ctmldap.loadUser({params:{'uid':'more trouble'}}
+                                                                                            ,null
+                                                                                            ,function(err,user){
+                                                                                                 should.not.exist(err)
+                                                                                                 ssha.checkssha(barePassword
+                                                                                                               ,user.userpassword
+                                                                                                               ,function(err,result){
+                                                                                                                    should.not.exist(err);
+                                                                                                                    should.exist(result);
+                                                                                                                    result.should.equal(true);
+                                                                                                                    done()
                                                                                                                     })
                                                                                                  })
                                                                             })
-                                                  });
-                                              })
+                                              });
     })
     it('should fail to modify to a chosen password with incorrect current password'
       ,function(don){
