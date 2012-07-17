@@ -19,10 +19,28 @@ describe('ldapjs_editor',function(){
         });
     });
     it('should create and delete a new entry',function(done){
-        ctmldap.createNewUser({params:{'uid':'trouble'
+        ctmldap.createNewUser({params:{'uid':'trouble2'
                                       ,'mail':test_email
-                                      ,'givenName':'Studly'
+                                      ,'givenname':'Studly'
                                       ,'sn':'McDude'
+                                      }},null,function(err,user,barePassword){
+                                                  should.not.exist(err);
+                                                  should.exist(user);
+                                                  ctmldap.deleteUser({params:{'uid':'trouble2'}}
+                                                                    ,null
+                                                                    ,function(err){
+                                                                         should.not.exist(err)
+                                                                         done()
+                                                                     });
+                                              });
+    });
+
+
+    it('should create and delete a new entry with camel case',function(done){
+        ctmldap.createNewUser({params:{'uid':'trouble'
+                                      ,'Mail':test_email
+                                      ,'GivenName':'Studly'
+                                      ,'SN':'McDude'
                                       }},null,function(err,user,barePassword){
                                                   should.not.exist(err);
                                                   should.exist(user);
@@ -79,12 +97,14 @@ describe('ldapjs_editor',function(){
                                       }},null,function(err,user){
                                                   should.not.exist(err);
                                                   should.exist(user);
+                                                  var pass;
                                                   async.series([function(cb){
                                                                     ctmldap.resetPassword({params:{'uid':'more trouble'}}
                                                                                          ,null
                                                                                          ,function(err,barePassword){
                                                                                               should.not.exist(err)
                                                                                               should.exist(barePassword)
+                                                                                              pass = barePassword
                                                                                               ctmldap.loadUser({params:{'uid':'more trouble'}}
                                                                                                               ,null
                                                                                                               ,function(err,user){
@@ -116,6 +136,34 @@ describe('ldapjs_editor',function(){
                                                                                                               user.sn.should.equal('McBouncy')
                                                                                                               user.cn.should.equal('Bran McBouncy')
                                                                                                               cb()
+                                                                                                          });
+                                                                                     })
+                                                                }
+                                                               ,function(cb){
+                                                                    ctmldap.editUser({params:{'uid':'more trouble'
+                                                                                             ,'mail':'baka@activimetrics.com'
+                                                                                             ,'sn':'McBlighty'
+                                                                                             ,'userPassword':'smeagol'
+                                                                                             ,'currentPassword':pass
+                                                                                             }}
+                                                                                    ,null
+                                                                                    ,function(err){
+                                                                                         should.not.exist(err)
+                                                                                         ctmldap.loadUser({params:{'uid':'more trouble'}}
+                                                                                                         ,null
+                                                                                                         ,function(err,user){
+                                                                                                              should.not.exist(err)
+                                                                                                              user.mail.should.equal('baka@activimetrics.com')
+                                                                                                              user.sn.should.equal('McBlighty')
+                                                                                                              user.cn.should.equal('Bran McBlighty')
+                                                                                                              ssha.checkssha('smeagol'
+                                                                                                                            ,user.userpassword
+                                                                                                                            ,function(err,result){
+                                                                                                                                 should.not.exist(err);
+                                                                                                                                 should.exist(result);
+                                                                                                                                 result.should.equal(true);
+                                                                                                                                 cb()
+                                                                                                                             })
                                                                                                           });
                                                                                      })
                                                                 }]
