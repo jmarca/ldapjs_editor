@@ -44,6 +44,7 @@ Okay, hackity hack, that was for the local tests, which I've now moved
 out of the way.  The current tests under the test directory are for a
 live openldap server
 
+    export MAILER_HOST='translab.its.uci.edu'
     export LDAP_DN='cn=Manager,dc=ctmlabs,dc=org'
     export LDAP_HOST='auth.ctmlabs.net'
     export LDAP_PORT=389
