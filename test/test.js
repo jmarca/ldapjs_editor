@@ -79,25 +79,50 @@ describe('ldapjs_editor',function(){
                                       }},null,function(err,user){
                                                   should.not.exist(err);
                                                   should.exist(user);
-                                                  ctmldap.resetPassword({params:{'uid':'more trouble'}}
-                                                                       ,null
-                                                                       ,function(err,barePassword){
-                                                                            should.not.exist(err)
-                                                                            should.exist(barePassword)
-                                                                            ctmldap.loadUser({params:{'uid':'more trouble'}}
-                                                                                            ,null
-                                                                                            ,function(err,user){
-                                                                                                 should.not.exist(err)
-                                                                                                 ssha.checkssha(barePassword
-                                                                                                               ,user.userpassword
-                                                                                                               ,function(err,result){
-                                                                                                                    should.not.exist(err);
-                                                                                                                    should.exist(result);
-                                                                                                                    result.should.equal(true);
-                                                                                                                    done()
-                                                                                                                    })
-                                                                                                 })
-                                                                            })
+                                                  async.series([function(cb){
+                                                                    ctmldap.resetPassword({params:{'uid':'more trouble'}}
+                                                                                         ,null
+                                                                                         ,function(err,barePassword){
+                                                                                              should.not.exist(err)
+                                                                                              should.exist(barePassword)
+                                                                                              ctmldap.loadUser({params:{'uid':'more trouble'}}
+                                                                                                              ,null
+                                                                                                              ,function(err,user){
+                                                                                                                   should.not.exist(err)
+                                                                                                                   ssha.checkssha(barePassword
+                                                                                                                                 ,user.userpassword
+                                                                                                                                 ,function(err,result){
+                                                                                                                                      should.not.exist(err);
+                                                                                                                                      should.exist(result);
+                                                                                                                                      result.should.equal(true);
+                                                                                                                                      cb()
+                                                                                                                                  })
+                                                                                                               })
+                                                                                          })
+                                                                }
+                                                               ,function(cb){
+                                                                    ctmldap.editUser({params:{'uid':'more trouble'
+                                                                                             ,'mail':'farfalla@activimetrics.com'
+                                                                                             ,'sn':'McBouncy'
+                                                                                             }}
+                                                                                    ,null
+                                                                                    ,function(err){
+                                                                                         should.not.exist(err)
+                                                                                         ctmldap.loadUser({params:{'uid':'more trouble'}}
+                                                                                                         ,null
+                                                                                                         ,function(err,user){
+                                                                                                              should.not.exist(err)
+                                                                                                              user.mail.should.equal('farfalla@activimetrics.com')
+                                                                                                              user.sn.should.equal('McBouncy')
+                                                                                                              user.cn.should.equal('Bran McBouncy')
+                                                                                                              cb()
+                                                                                                          });
+                                                                                     })
+                                                                }]
+                                                               ,function(err){
+                                                                    done(err);
+                                                                });
+
                                               });
     })
     it('should fail to modify to a chosen password with incorrect current password'
