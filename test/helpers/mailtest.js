@@ -20,7 +20,7 @@ var smtpTransport = nodemailer.createTransport("SMTP",{
 // setup e-mail data with unicode symbols
 var mailOptions = {
     from: "Sender Name ✔ <sender@example.com>", // sender address
-    to: "crindt@gmail.com, jmarca@translab.its.uci.edu, james@activimetrics.com", // list of receivers
+    to: "jmarca@translab.its.uci.edu, james@activimetrics.com", // list of receivers
     subject: "Hello ✔", // Subject line
     text: "Hello world ✔ from nodemailer", // plaintext body
     html: "<b>Hello world ✔ from nodemailer</b>" // html body

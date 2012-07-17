@@ -3,6 +3,8 @@ var fs = require('fs')
 var _ = require('underscore')
 var async = require('async')
 
+var env = process.env;
+var manager_password = env.LDAP_PASS;
 
 ///--- Shared handlers
 
@@ -23,7 +25,7 @@ var server = ldap.createServer();
 
 
 server.bind('cn=Manager', function(req, res, next) {
-  if (req.dn.toString() !== 'cn=Manager' || req.credentials !== 'ctmlabs.net')
+  if (req.dn.toString() !== 'cn=Manager' || req.credentials !== manager_password)
     return next(new ldap.InvalidCredentialsError());
 
   res.end();
@@ -33,14 +35,13 @@ server.bind('cn=Manager', function(req, res, next) {
 server.add(SUFFIX, authorize, function(req, res, next) {
   var dn = req.dn.toString();
     console.log('adding')
-    //console.log(req)
-    console.log(dn)
 
   if (db[dn])
     return next(new ldap.EntryAlreadyExistsError(dn));
 
-  db[dn] = req.toObject().attributes;
-  res.end();
+    db[dn] = req.toObject().attributes;
+    console.log(JSON.stringify(db[dn]))
+    res.end();
   return next();
 });
 
@@ -49,7 +50,7 @@ server.bind(SUFFIX, function(req, res, next) {
   if (!db[dn])
     return next(new ldap.NoSuchObjectError(dn));
 
-  if (!dn[dn].userpassword)
+  if (!db[dn].userpassword)
     return next(new ldap.NoSuchAttributeError('userPassword'));
 
   if (db[dn].userpassword !== req.credentials)
@@ -286,7 +287,7 @@ server.listen(1389, function() {
     });
     function binder( client ){
         return function ( next ){
-            client.bind('cn=Manager','ctmlabs.net',function(err){
+            client.bind('cn=Manager',manager_password,function(err){
                 if(err) next(err);
                 console.log('bind okay');
                 next()
