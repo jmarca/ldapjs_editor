@@ -44,7 +44,12 @@ describe('openldap ldapjs_editor',function(){
                                                    console.log(4)
                                                    cb()
                                                });
-                        }]
+                        }
+                       ,function(cb){
+                            ctmldap.deleteUser({params:{uid:'luser'}}
+                                              ,null
+                                              ,cb)}
+                       ]
                       ,setupdone
                       )
     })
@@ -283,6 +288,7 @@ describe('openldap ldapjs_editor',function(){
     });
 
     it('should create a new group',function(done){
+
         async.waterfall([function(cb){
                              ctmldap.createNewUser({params:{uid:'luser'
                                                           ,'mail':test_email
@@ -297,7 +303,7 @@ describe('openldap ldapjs_editor',function(){
                                                          ,uniquemember:[ctmldap.getDSN(user)]}}
                                                 ,null
                                                 ,function(err,group){
-                                                     console.log(JSON.stringify(err))
+                                                     console.log('craete grp '+JSON.stringify(err))
                                                      should.not.exist(err)
                                                      should.exist(group)
                                                      group.should.have.property('uniquemember')
@@ -309,17 +315,21 @@ describe('openldap ldapjs_editor',function(){
                              ctmldap.deleteGroup({params:{cn:group.cn}}
                                                  ,null
                                                 ,function(err){
-                                                     console.log(JSON.stringify(err))
+                                                     console.log('delete group ' +JSON.stringify(err))
                                                      should.not.exist(err)
-                                                     cb(user)
+                                                     cb(null,user)
                                                  });
                          }
                         ,function(user,cb){
                              ctmldap.deleteUser({params:{uid:user.uid}}
                                                ,null
-                                               ,cb)
+                                               ,function(e,r){ cb(e) })
                          }]
                        ,function(err){
+                            if(err){
+                                console.log('waterfall error: '+JSON.stringify(err))
+                                throw new Error(err)
+                            }
                             done()
                         });
 
