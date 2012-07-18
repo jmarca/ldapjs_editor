@@ -22,6 +22,7 @@ var delete_groups = [
     'losers'
                     ,'winters'
                     ,'summers'
+                    ,'springs'
 ]
 
 var _before = function(setupdone){
@@ -403,6 +404,8 @@ describe('openldap ldapjs_editor',function(){
 
     });
 
+
+
     it('should add and remove users to a  group',function(done){
 
         async.waterfall([function(cb){
@@ -476,6 +479,8 @@ describe('openldap ldapjs_editor',function(){
 
     });
 
+
+
     it('groups cannot be empty, right?',function(done){
 
         async.waterfall([function(cb){
@@ -522,6 +527,54 @@ describe('openldap ldapjs_editor',function(){
                                                      should.not.exist(err)
                                                      cb()
                                                  });
+                         }]
+                       ,function(err){
+                            if(err){
+                                console.log('waterfall error: '+JSON.stringify(err))
+                                throw new Error(err)
+                            }
+                            done()
+                        });
+
+    });
+
+
+
+    it('should create a group by assigning a member to it, even if it does not exist'
+      ,function(done){
+        async.waterfall([function(cb){
+                             ctmldap.loadGroup({params:{cn:'springs'}}
+                                                ,null
+                                                ,function(err,group){
+                                                     should.exist(err)
+                                                     should.not.exist(group)
+                                                     cb()
+                                                 })
+                         }
+                        ,function(cb){
+                             ctmldap.addUserToGroup({params:{cn:'springs'
+                                                            ,create:true
+                                                            ,uniquemember:['jmarca']}}
+                                                        ,null
+                                                   ,function(err,group){
+                                                        if(err) console.log('baka '+JSON.stringify(err))
+                                                        should.not.exist(err)
+                                                        should.exist(group)
+                                                        group.should.have.property('uniquemember')
+                                                        group.uniquemember.should.be.an.instanceOf(Array)
+                                                        group.uniquemember.should.eql([ctmldap.getDSN('jmarca')])
+                                                        return cb(null,group)
+                                                    })
+                         }
+                        ,function(group,cb){
+                             ctmldap.removeUserFromGroup({params:{cn:'springs'
+                                                                 ,dropmembers:['jmarca']}}
+                                                        ,null
+                                                        ,function(err,group){
+                                                             should.not.exist(err)
+                                                             should.not.exist(group)
+                                                             return cb(null)
+                                                    })
                          }]
                        ,function(err){
                             if(err){
