@@ -13,46 +13,48 @@ var test_email = env.LDAP_USER_EMAIL;
 describe('openldap ldapjs_editor',function(){
     before(function(setupdone){
         if (!setupdone) setupdone = function(){ return null; };
-        async.parallel([function(cb){
-                            ctmldap.deleteUser({params:{'uid':'trouble'}}
-                                              ,null
-                                              ,function(err){
-                                                   console.log(1)
-                                                   cb()
-                                               });
-                        }
-                       ,function(cb){
-                            ctmldap.deleteUser({params:{'uid':'trouble2'}}
-                                              ,null
-                                              ,function(err){
-                                                   console.log(2)
-                                                   cb()
-                                               });
-                        }
-                       ,function(cb){
-                            ctmldap.deleteUser({params:{'uid':'trouble3'}}
-                                              ,null
-                                              ,function(err){
-                                                   console.log(3)
-                                                   cb()
-                                               });
-                        }
-                       ,function(cb){
-                            ctmldap.deleteUser({params:{'uid':'more trouble'}}
-                                              ,null
-                                              ,function(err){
-                                                   console.log(4)
-                                                   cb()
-                                               });
-                        }
-                       ,function(cb){
-                            ctmldap.deleteUser({params:{uid:'luser'}}
-                                              ,null
-                                              ,cb)}
-                       ]
-                      ,setupdone
-                      )
-    })
+        async.parallel([
+            // function(cb){
+    //                         ctmldap.deleteUser({params:{'uid':'trouble'}}
+    //                                           ,null
+    //                                           ,function(err){
+    //                                                console.log(1)
+    //                                                cb()
+    //                                            });
+    //                     }
+    //                    ,function(cb){
+    //                         ctmldap.deleteUser({params:{'uid':'trouble2'}}
+    //                                           ,null
+    //                                           ,function(err){
+    //                                                console.log(2)
+    //                                                cb()
+    //                                            });
+    //                     }
+    //                    ,function(cb){
+    //                         ctmldap.deleteUser({params:{'uid':'trouble3'}}
+    //                                           ,null
+    //                                           ,function(err){
+    //                                                console.log(3)
+    //                                                cb()
+    //                                            });
+    //                     }
+    //                    ,function(cb){
+    //                         ctmldap.deleteUser({params:{'uid':'more trouble'}}
+    //                                           ,null
+    //                                           ,function(err){
+    //                                                console.log(4)
+    //                                                cb()
+    //                                            });
+    //                     }
+    // ,
+        function(cb){
+            ctmldap.deleteUser({params:{uid:'loooser'}}
+                              ,null
+                              ,cb)}
+    ]
+                                   ,setupdone
+          )
+})
 
 
     it('should load a known user',function(done){
@@ -282,7 +284,7 @@ describe('openldap ldapjs_editor',function(){
                               should.exist(group)
                               group.should.have.property('uniquemember')
                               group.should.not.have.property('uniqueMember')
-                              group.uniquemember.should.an.instanceOf(Array)
+                              group.uniquemember.should.be.an.instanceOf(Array)
                               done()
                           });
     });
@@ -307,9 +309,66 @@ describe('openldap ldapjs_editor',function(){
                                                      should.not.exist(err)
                                                      should.exist(group)
                                                      group.should.have.property('uniquemember')
-                                                     group.uniquemember.should.an.instanceOf(Array)
+                                                     group.uniquemember.should.be.an.instanceOf(Array)
                                                      cb(null,user,group)
                                                  })
+                         }
+                        ,function(user,group,cb){
+                             ctmldap.deleteGroup({params:{cn:group.cn}}
+                                                 ,null
+                                                ,function(err){
+                                                     console.log('delete group ' +JSON.stringify(err))
+                                                     should.not.exist(err)
+                                                     cb(null,user)
+                                                 });
+                         }
+                        ,function(user,cb){
+                             ctmldap.deleteUser({params:{uid:user.uid}}
+                                               ,null
+                                               ,function(e,r){ cb(e) })
+                         }]
+                       ,function(err){
+                            if(err){
+                                console.log('waterfall error: '+JSON.stringify(err))
+                                throw new Error(err)
+                            }
+                            done()
+                        });
+
+    });
+
+    it('should add users to a  group',function(done){
+
+        async.waterfall([function(cb){
+                             ctmldap.createNewUser({params:{uid:'loooser'
+                                                          ,'mail':test_email
+                                                          ,'givenname':'Sloppy'
+                                                          ,'sn':'McFly'}}
+                                                  ,null
+                                                  ,cb)
+                         }
+                        ,function(user,pass,cb){
+
+                             ctmldap.createGroup({params:{cn:'winters'
+                                                         ,uniquemember:[ctmldap.getDSN(user)]}}
+                                                ,null
+                                                ,function(err,group){
+                                                     cb(null,user,group)
+                                                 })
+                         }
+                        ,function(user,group,cb){
+                             ctmldap.addUserToGroup({params:{cn:'winters'
+                                                            ,newmembers:['jmarca']}}
+                                                   ,null
+                                                   ,function(err,group){
+                                                        console.log('added to grp '+JSON.stringify(err))
+                                                        should.not.exist(err)
+                                                        should.exist(group)
+                                                        group.should.have.property('uniquemember')
+                                                        group.uniquemember.should.be.an.instanceOf(Array)
+                                                        group.uniquemember.should.include(ctmldap.getDSN({uid:'jmarca'}))
+                                                        return cb(null,user,group)
+                                                    })
                          }
                         ,function(user,group,cb){
                              ctmldap.deleteGroup({params:{cn:group.cn}}
