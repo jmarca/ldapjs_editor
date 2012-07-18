@@ -11,9 +11,9 @@ var env = process.env;
 var test_email = env.LDAP_USER_EMAIL;
 
 describe('openldap ldapjs_editor',function(){
-    before(function(setupdone){
-        if (!setupdone) setupdone = function(){ return null; };
-        async.parallel([
+    // before(function(setupdone){
+    //     if (!setupdone) setupdone = function(){ return null; };
+        //async.parallel([
             // function(cb){
     //                         ctmldap.deleteUser({params:{'uid':'trouble'}}
     //                                           ,null
@@ -47,14 +47,20 @@ describe('openldap ldapjs_editor',function(){
     //                                            });
     //                     }
     // ,
-        function(cb){
-            ctmldap.deleteUser({params:{uid:'loooser'}}
-                              ,null
-                              ,cb)}
-    ]
-                                   ,setupdone
-          )
-})
+    //     async.parallel([function(cb){
+    //                         ctmldap.deleteUser({params:{uid:'loooser'}}
+    //                                           ,null
+    //                                           ,cb)}
+    //                    ,function(cb){
+    //                         ctmldap.deleteGroup({params:{cn:'winters'}}
+    //                                            ,null
+    //                                            ,function(err){
+    //                                                 cb()
+    //                                             });
+    //                     }]
+    //                   ,setupdone
+    //                   )
+    // })
 
 
     it('should load a known user',function(done){
@@ -305,11 +311,12 @@ describe('openldap ldapjs_editor',function(){
                                                          ,uniquemember:[ctmldap.getDSN(user)]}}
                                                 ,null
                                                 ,function(err,group){
-                                                     console.log('craete grp '+JSON.stringify(err))
                                                      should.not.exist(err)
                                                      should.exist(group)
+                                                     group.uniquemember.should.include(ctmldap.getDSN({uid:'luser'}))
                                                      group.should.have.property('uniquemember')
                                                      group.uniquemember.should.be.an.instanceOf(Array)
+                                                     group.uniquemember.should.have.length(1)
                                                      cb(null,user,group)
                                                  })
                          }
@@ -317,7 +324,6 @@ describe('openldap ldapjs_editor',function(){
                              ctmldap.deleteGroup({params:{cn:group.cn}}
                                                  ,null
                                                 ,function(err){
-                                                     console.log('delete group ' +JSON.stringify(err))
                                                      should.not.exist(err)
                                                      cb(null,user)
                                                  });
@@ -361,12 +367,28 @@ describe('openldap ldapjs_editor',function(){
                                                             ,newmembers:['jmarca']}}
                                                    ,null
                                                    ,function(err,group){
-                                                        console.log('added to grp '+JSON.stringify(err))
                                                         should.not.exist(err)
                                                         should.exist(group)
                                                         group.should.have.property('uniquemember')
                                                         group.uniquemember.should.be.an.instanceOf(Array)
                                                         group.uniquemember.should.include(ctmldap.getDSN({uid:'jmarca'}))
+                                                        group.uniquemember.should.include(ctmldap.getDSN({uid:'loooser'}))
+                                                        group.uniquemember.should.have.length(2)
+                                                        return cb(null,user,group)
+                                                    })
+                         }
+                        ,function(user,group,cb){
+                             ctmldap.removeUserFromGroup({params:{cn:'winters'
+                                                            ,dropmembers:['loooser']}}
+                                                   ,null
+                                                   ,function(err,group){
+                                                        should.not.exist(err)
+                                                        should.exist(group)
+                                                        group.should.have.property('uniquemember')
+                                                        group.uniquemember.should.be.an.instanceOf(Array)
+                                                        group.uniquemember.should.have.length(1)
+                                                        group.uniquemember.should.include(ctmldap.getDSN({uid:'jmarca'}))
+                                                        group.uniquemember.should.not.include(ctmldap.getDSN({uid:'loooser'}))
                                                         return cb(null,user,group)
                                                     })
                          }
@@ -374,7 +396,6 @@ describe('openldap ldapjs_editor',function(){
                              ctmldap.deleteGroup({params:{cn:group.cn}}
                                                  ,null
                                                 ,function(err){
-                                                     console.log('delete group ' +JSON.stringify(err))
                                                      should.not.exist(err)
                                                      cb(null,user)
                                                  });
