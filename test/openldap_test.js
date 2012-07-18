@@ -15,6 +15,7 @@ var delete_users = [
     'trouble'
                    ,'trouble2'
                    ,'trouble3'
+                   ,'trouble4'
                    ,'more trouble'
                    ,'loooser'
                    ,'luser'
@@ -630,6 +631,65 @@ describe('openldap ldapjs_editor',function(){
                             }
                             done()
                         });
+
+    });
+
+    it('should remove multiple group memberships upon deletion of an entry',function(done){
+        async.waterfall([function(cb){
+                             ctmldap.createNewUser({params:{'uid':'trouble4'
+                                                           ,'mail':test_email
+                                                           ,'givenname':'Flatly'
+                                                           ,'sn':'Refusing'
+                                                           }}
+                                                  ,null
+                                                  ,function(err,user){
+                                                       if(err) console.log('gag1: '+JSON.stringify(err))
+                                                       cb(err,user)
+                                                   })
+                         }
+                        ,function(user,cb){
+                             ctmldap.addUserToGroup({params:{cn:'falls'
+                                                            ,create:true
+                                                            ,uniquemember:[user.uid]}}
+                                                   ,null
+                                                   ,function(err){
+                                                        if(err) console.log('gag2: '+JSON.stringify(err))
+                                                        cb(err,user)
+                                                    })
+                         }
+                        ,function(user,cb){
+                             ctmldap.addUserToGroup({params:{cn:'weekends'
+                                                            ,create:true
+                                                            ,uniquemember:[user.uid]}}
+                                                   ,null
+                                                   ,function(err){
+                                                        if(err) console.log('gag3: '+JSON.stringify(err))
+                                                        cb(err,user)
+                                                    })
+                         }
+                        ,function(user,cb){
+                             ctmldap.deleteUser({params:{'uid':'trouble4'}}
+                                               ,null
+                                               ,function(err){
+                                                        if(err) console.log('gag4: '+JSON.stringify(err))
+                                                        cb(err)
+                                                })
+                         }
+                        ,function(cb){
+                             ctmldap.loadGroup({params:{cn:'falls'}}
+                                              ,null
+                                              ,function(err,group){
+                                                   should.exist(err)
+                                                   should.not.exist(group)
+                                                   cb()
+                                               }
+                                              )
+                         }]
+                       ,function(err){
+                            if(err) console.log('gag: '+JSON.stringify(err))
+                            should.not.exist(err)
+                            done()
+                        })
 
     });
 
