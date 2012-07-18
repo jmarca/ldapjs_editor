@@ -82,18 +82,11 @@ describe('openldap ldapjs_editor',function(){
                                       ,'givenname':'Studly'
                                       ,'sn':'McDude'
                                       }},null,function(err,user,barePassword){
-                                                  console.log('create done')
-                                                  console.log('errors '+JSON.stringify(err))
-                                                  console.log('user '+JSON.stringify(user))
-                                                  console.log('pass '+JSON.stringify(barePassword))
-
                                                   should.not.exist(err);
                                                   should.exist(user);
                                                   ctmldap.deleteUser({params:{'uid':'trouble2'}}
                                                                     ,null
                                                                     ,function(err){
-                                                                         console.log('delete done')
-                                                                         console.log('errors '+JSON.stringify(err))
                                                                          should.not.exist(err)
                                                                          done()
                                                                     });
@@ -123,8 +116,6 @@ describe('openldap ldapjs_editor',function(){
                                       ,'GivenName':'Studly'
                                       ,'SN':'McFly'
                                       }},null,function(err,user,barePassword){
-                                                  console.log('user is '+JSON.stringify(user))
-                                                  console.log('barePassword is '+JSON.stringify(barePassword))
                                                   should.not.exist(err);
                                                   should.exist(user);
                                                   async.series([function(cb){
@@ -132,13 +123,9 @@ describe('openldap ldapjs_editor',function(){
                                                                     var client = ctmldap.getClient();
 
                                                                     client.bind(ctmldap.getDSN(user),barePassword,function(err){
-                                                                        console.log('connect with new account: errors: '+JSON.stringify(err))
                                                                         should.not.exist(err)
                                                                         var dsn = 'ou=people,dc=ctmlabs,dc=org';
                                                                         ctmldap.query(null,dsn,client,function(err,result){
-                                                                            console.log('query done with new account')
-                                                                            console.log('errors '+JSON.stringify(err))
-                                                                            console.log('result '+JSON.stringify(result))
                                                                             should.not.exist(err)
                                                                             should.exist(result)
                                                                             client.unbind()
@@ -150,8 +137,6 @@ describe('openldap ldapjs_editor',function(){
                                                                     ctmldap.deleteUser({params:{'uid':'trouble3'}}
                                                                                       ,null
                                                                                       ,function(err){
-                                                                                           console.log('done deleting')
-                                                                                           console.log('erors: '+JSON.stringify(err))
                                                                                            should.not.exist(err)
                                                                                            cb()
                                                                                        });
@@ -260,13 +245,37 @@ describe('openldap ldapjs_editor',function(){
                                               });
     })
 
-    it('should get a list of all users',function(){
+    it('should get a list of all users',function(done){
         ctmldap.loadUsers(null,null,function(err,users){
             should.not.exist(err)
             should.exist(users)
             // need a better test here for making sure I got a proper list of users
-            console.log(users.length)
-            users.length.should.have.length(50) // this will fail
+            users.length.should.be.above(45)
+            done()
+        });
+    })
 
+    it('should get a list of all groups',function(done){
+        ctmldap.loadGroups(null,null,function(err,groups){
+            should.not.exist(err)
+            should.exist(groups)
+            // need a better test here for making sure I got a proper list of groups
+            groups.length.should.be.above(5)
+            done()
+        });
+    })
+
+    it('should get a known group',function(done){
+        ctmldap.loadGroup({params:{cn:'admin'}}
+                         ,null
+                         ,function(err,group){
+                              should.not.exist(err)
+                              should.exist(group)
+                              group.should.have.property('uniquemember')
+                              group.should.not.have.property('uniqueMember')
+                              group.uniquemember.should.an.instanceOf(Array)
+                              done()
+                          });
+    });
 });
 
