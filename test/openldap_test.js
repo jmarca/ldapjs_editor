@@ -17,6 +17,7 @@ describe('openldap ldapjs_editor',function(){
                             ctmldap.deleteUser({params:{'uid':'trouble'}}
                                               ,null
                                               ,function(err){
+                                                   console.log(1)
                                                    cb()
                                                });
                         }
@@ -24,6 +25,7 @@ describe('openldap ldapjs_editor',function(){
                             ctmldap.deleteUser({params:{'uid':'trouble2'}}
                                               ,null
                                               ,function(err){
+                                                   console.log(2)
                                                    cb()
                                                });
                         }
@@ -31,6 +33,7 @@ describe('openldap ldapjs_editor',function(){
                             ctmldap.deleteUser({params:{'uid':'trouble3'}}
                                               ,null
                                               ,function(err){
+                                                   console.log(3)
                                                    cb()
                                                });
                         }
@@ -38,6 +41,7 @@ describe('openldap ldapjs_editor',function(){
                             ctmldap.deleteUser({params:{'uid':'more trouble'}}
                                               ,null
                                               ,function(err){
+                                                   console.log(4)
                                                    cb()
                                                });
                         }]
@@ -276,6 +280,49 @@ describe('openldap ldapjs_editor',function(){
                               group.uniquemember.should.an.instanceOf(Array)
                               done()
                           });
+    });
+
+    it('should create a new group',function(done){
+        async.waterfall([function(cb){
+                             ctmldap.createNewUser({params:{uid:'luser'
+                                                          ,'mail':test_email
+                                                          ,'givenname':'Sloppy'
+                                                          ,'sn':'McFly'}}
+                                                  ,null
+                                                  ,cb)
+                         }
+                        ,function(user,pass,cb){
+
+                             ctmldap.createGroup({params:{cn:'losers'
+                                                         ,uniquemember:[ctmldap.getDSN(user)]}}
+                                                ,null
+                                                ,function(err,group){
+                                                     console.log(JSON.stringify(err))
+                                                     should.not.exist(err)
+                                                     should.exist(group)
+                                                     group.should.have.property('uniquemember')
+                                                     group.uniquemember.should.an.instanceOf(Array)
+                                                     cb(null,user,group)
+                                                 })
+                         }
+                        ,function(user,group,cb){
+                             ctmldap.deleteGroup({params:{cn:group.cn}}
+                                                 ,null
+                                                ,function(err){
+                                                     console.log(JSON.stringify(err))
+                                                     should.not.exist(err)
+                                                     cb(user)
+                                                 });
+                         }
+                        ,function(user,cb){
+                             ctmldap.deleteUser({params:{uid:user.uid}}
+                                               ,null
+                                               ,cb)
+                         }]
+                       ,function(err){
+                            done()
+                        });
+
     });
 });
 
