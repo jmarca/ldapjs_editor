@@ -36,7 +36,7 @@ var _before = function(setupdone){
                           async.forEachSeries(delete_groups
                                          ,function(cn,cb2){
                                               ctmldap.deleteGroup({params:{cn:cn}}
-                                                                 ,null
+
                                                                 ,function(err){
                                                                      if(err){
                                                                          if(err.name && err.name=='NoSuchObjectError'){
@@ -59,7 +59,7 @@ var _before = function(setupdone){
                           async.forEachSeries(delete_users
                                          ,function(uid,cb2){
                                               ctmldap.deleteUser({params:{'uid':uid}}
-                                                                ,null
+
                                                                 ,function(err){
                                                                      if(err){
                                                                          if(err.name && err.name=='NoSuchObjectError'){
@@ -86,7 +86,7 @@ describe('openldap ldapjs_editor',function(){
 
     it('should load a known user',function(done){
         ctmldap.loadUser({params:{'uid':'jmarca'}}
-                        ,null,function(err,user){
+                        ,function(err,user){
                                   should.not.exist(err);
                                   should.exist(user);
                                   user.should.have.property('mail','jmarca@translab.its.uci.edu');
@@ -97,7 +97,7 @@ describe('openldap ldapjs_editor',function(){
     });
     it('should load a known user with group membership',function(done){
         ctmldap.loadUser({params:{'uid':'jmarca','memberof':true}}
-                        ,null,function(err,user){
+                        ,function(err,user){
                                   should.not.exist(err);
                                   should.exist(user);
                                   user.should.have.property('mail','jmarca@translab.its.uci.edu');
@@ -109,7 +109,7 @@ describe('openldap ldapjs_editor',function(){
     });
     it('should load a known user with password hash',function(done){
         ctmldap.loadUser({params:{'uid':'jmarca','userpassword':true}}
-                        ,null,function(err,user){
+                        ,function(err,user){
                                   should.not.exist(err);
                                   should.exist(user);
                                   user.should.have.property('mail','jmarca@translab.its.uci.edu');
@@ -124,7 +124,7 @@ describe('openldap ldapjs_editor',function(){
                                     ,'userpassword':'poobah'
                                     ,'currentpassword':'notit'
                                     }}
-                           ,null
+
                            ,function(err,barePassword){
                                 should.exist(err)
                                 should.not.exist(barePassword)
@@ -133,7 +133,7 @@ describe('openldap ldapjs_editor',function(){
        });
 
     it('should not create a duplicate entry',function(done){
-        ctmldap.createNewUser({params:{'uid':'jmarca'}},null,function(err,user){
+        ctmldap.createNewUser({params:{'uid':'jmarca'}},function(err,user){
             should.exist(err);
             should.not.exist(user);
             done()
@@ -144,15 +144,15 @@ describe('openldap ldapjs_editor',function(){
                                       ,'mail':test_email
                                       ,'givenname':'Studly'
                                       ,'sn':'McDude'
-                                      }},null,function(err,user,barePassword){
-                                                  should.not.exist(err);
-                                                  should.exist(user);
-                                                  ctmldap.deleteUser({params:{'uid':'trouble2'}}
-                                                                    ,null
-                                                                    ,function(err){
-                                                                         if(err){ console.log(JSON.stringify(err)) }
-                                                                         should.not.exist(err)
-                                                                         done()
+                                      }},function(err,user,barePassword){
+                                             should.not.exist(err);
+                                             should.exist(user);
+                                             ctmldap.deleteUser({params:{'uid':'trouble2'}}
+
+                                                               ,function(err){
+                                                                    if(err){ console.log(JSON.stringify(err)) }
+                                                                    should.not.exist(err)
+                                                                    done()
                                                                     });
                                               });
     });
@@ -164,7 +164,7 @@ describe('openldap ldapjs_editor',function(){
                                                            ,'Mail':test_email
                                                            ,'GivenName':'Studly'
                                                            ,'SN':'McDude'
-                                                           }},null
+                                                           }}
                                                   ,function(err,user,barePassword){
                                                        should.not.exist(err);
                                                        should.exist(user);
@@ -173,7 +173,7 @@ describe('openldap ldapjs_editor',function(){
                          }
                         ,function(u,barePassword,cb){
                              ctmldap.loadUser({params:{'uid':'trouble',memberof:1}}
-                                             ,null
+
                                              ,function(err,user){
                                                   should.not.exist(err)
                                                   should.exist(user)
@@ -185,7 +185,7 @@ describe('openldap ldapjs_editor',function(){
                          }
                         ,function(u,bp,cb){
                              ctmldap.deleteUser({params:{'uid':'trouble'}}
-                                                                    ,null
+
                                                                     ,function(err){
                                                                          should.not.exist(err)
                                                                          cb(err)
@@ -201,7 +201,7 @@ describe('openldap ldapjs_editor',function(){
                                       ,'Mail':test_email
                                       ,'GivenName':'Studly'
                                       ,'SN':'McFly'
-                                      }},null,function(err,user,barePassword){
+                                      }},function(err,user,barePassword){
                                                   should.not.exist(err);
                                                   should.exist(user);
                                                   async.series([function(cb){
@@ -211,7 +211,7 @@ describe('openldap ldapjs_editor',function(){
                                                                     client.bind(ctmldap.getDSN(user),barePassword,function(err){
                                                                         should.not.exist(err)
                                                                         var dsn = 'ou=people,dc=ctmlabs,dc=org';
-                                                                        ctmldap.query(null,dsn,client,function(err,result){
+                                                                        ctmldap.query(null,dsn,['cn','uid'],client,function(err,result){
                                                                             should.not.exist(err)
                                                                             should.exist(result)
                                                                             client.unbind()
@@ -221,7 +221,7 @@ describe('openldap ldapjs_editor',function(){
                                                                 }
                                                                ,function(cb){
                                                                     ctmldap.deleteUser({params:{'uid':'trouble3'}}
-                                                                                      ,null
+
                                                                                       ,function(err){
                                                                                            should.not.exist(err)
                                                                                            cb()
@@ -243,20 +243,20 @@ describe('openldap ldapjs_editor',function(){
                                       ,'mail':test_email
                                       ,'givenName':'Bran'
                                       ,'sn':'McMuphin'
-                                      }},null,function(err,user){
+                                      }},function(err,user){
                                                   should.not.exist(err);
                                                   should.exist(user);
                                                   var pass;
                                                   async.series([function(cb){
                                                                     ctmldap.resetPassword({params:{'uid':'more trouble'}}
-                                                                                         ,null
+
                                                                                          ,function(err,barePassword){
                                                                                               should.not.exist(err)
                                                                                               should.exist(barePassword)
                                                                                               pass = barePassword
                                                                                               ctmldap.loadUser({params:{'uid':'more trouble'
                                                                                                                   ,'userpassword':true}}
-                                                                                                              ,null
+
                                                                                                               ,function(err,user){
                                                                                                                    should.not.exist(err)
                                                                                                                    user.should.have.property('userpassword')
@@ -277,11 +277,11 @@ describe('openldap ldapjs_editor',function(){
                                                                                              ,'mail':'farfalla@activimetrics.com'
                                                                                              ,'sn':'McBouncy'
                                                                                              }}
-                                                                                    ,null
+
                                                                                     ,function(err){
                                                                                          should.not.exist(err)
                                                                                          ctmldap.loadUser({params:{'uid':'more trouble'}}
-                                                                                                         ,null
+
                                                                                                          ,function(err,user){
                                                                                                               should.not.exist(err)
                                                                                                               user.mail.should.equal('farfalla@activimetrics.com')
@@ -298,13 +298,13 @@ describe('openldap ldapjs_editor',function(){
                                                                                              ,'userPassword':'smeagol'
                                                                                              ,'currentPassword':pass
                                                                                              }}
-                                                                                    ,null
+
                                                                                     ,function(err){
                                                                                          should.not.exist(err)
                                                                                          ctmldap.loadUser({params:{'uid':'more trouble'
                                                                                                                   ,'userpassword':true
                                                                                                                   }}
-                                                                                                         ,null
+
                                                                                                          ,function(err,user){
                                                                                                               should.not.exist(err)
                                                                                                               user.mail.should.equal('baka@activimetrics.com')
@@ -323,7 +323,7 @@ describe('openldap ldapjs_editor',function(){
                                                                 }
                                                                ,function(cb){
                                                                     ctmldap.deleteUser({params:{'uid':'more trouble'}}
-                                                                                      ,null
+
                                                                                       ,function(err){
                                                                                            should.not.exist(err)
                                                                                            cb()
@@ -337,7 +337,7 @@ describe('openldap ldapjs_editor',function(){
     })
 
     it('should get a list of all users',function(done){
-        ctmldap.loadUsers(null,null,function(err,users){
+        ctmldap.loadUsers(null,function(err,users){
             should.not.exist(err)
             should.exist(users)
             // need a better test here for making sure I got a proper list of users
@@ -349,7 +349,7 @@ describe('openldap ldapjs_editor',function(){
     })
 
     it('should get a list of all groups',function(done){
-        ctmldap.loadGroups(null,null,function(err,groups){
+        ctmldap.loadGroups(null,function(err,groups){
             should.not.exist(err)
             should.exist(groups)
             // need a better test here for making sure I got a proper list of groups
@@ -360,7 +360,7 @@ describe('openldap ldapjs_editor',function(){
 
     it('should get a known group',function(done){
         ctmldap.loadGroup({params:{cn:'admin'}}
-                         ,null
+
                          ,function(err,group){
                               should.not.exist(err)
                               should.exist(group)
@@ -378,14 +378,14 @@ describe('openldap ldapjs_editor',function(){
                                                           ,'mail':test_email
                                                           ,'givenname':'Sloppy'
                                                           ,'sn':'McFly'}}
-                                                  ,null
+
                                                   ,cb)
                          }
                         ,function(user,pass,cb){
 
                              ctmldap.createGroup({params:{cn:'losers'
                                                          ,uniquemember:[ctmldap.getDSN(user)]}}
-                                                ,null
+
                                                 ,function(err,group){
                                                      should.not.exist(err)
                                                      should.exist(group)
@@ -398,7 +398,7 @@ describe('openldap ldapjs_editor',function(){
                          }
                         ,function(user,group,cb){
                              ctmldap.loadUser({params:{uid:'luser',memberof:1}}
-                                             ,null
+
                                              ,function(err,user_reload){
                                                   should.not.exist(err)
                                                   should.exist(user_reload)
@@ -411,7 +411,7 @@ describe('openldap ldapjs_editor',function(){
                          }
                         ,function(user,group,cb){
                              ctmldap.deleteGroup({params:{cn:group.cn}}
-                                                 ,null
+
                                                 ,function(err){
                                                      should.not.exist(err)
                                                      cb(null,user)
@@ -419,12 +419,12 @@ describe('openldap ldapjs_editor',function(){
                          }
                         ,function(user,cb){
                              ctmldap.deleteUser({params:{uid:user.uid}}
-                                               ,null
+
                                                ,function(e,r){ cb(e) })
                          }
                         ,function(cb){
                              ctmldap.loadGroup({params:{cn:newusergroup}}
-                                              ,null
+
                                               ,function(e,g){
                                                    if(g !== undefined){
                                                        g.uniquemember.should.not.include(ctmldap.getDSN('luser'))
@@ -434,7 +434,7 @@ describe('openldap ldapjs_editor',function(){
                          }
                         ,function(cb){
                              ctmldap.loadUser({params:{uid:'luser',memberof:1}}
-                                             ,null
+
                                              ,function(err,user){
                                                   should.exist(err)
                                                   should.not.exist(user)
@@ -461,14 +461,14 @@ describe('openldap ldapjs_editor',function(){
                                                           ,'mail':test_email
                                                           ,'givenname':'Sloppy'
                                                           ,'sn':'McFly'}}
-                                                  ,null
+
                                                   ,cb)
                          }
                         ,function(user,pass,cb){
 
                              ctmldap.createGroup({params:{cn:'winters'
                                                          ,uniquemember:[ctmldap.getDSN(user)]}}
-                                                ,null
+
                                                 ,function(err,group){
                                                      cb(null,user,group)
                                                  })
@@ -476,7 +476,7 @@ describe('openldap ldapjs_editor',function(){
                         ,function(user,group,cb){
                              ctmldap.addUserToGroup({params:{cn:'winters'
                                                             ,uniquemember:['jmarca']}}
-                                                   ,null
+
                                                    ,function(err,group){
                                                         if(err) console.log(JSON.stringify(err))
                                                         should.not.exist(err)
@@ -492,7 +492,7 @@ describe('openldap ldapjs_editor',function(){
                         ,function(user,group,cb){
                              ctmldap.removeUserFromGroup({params:{cn:'winters'
                                                             ,dropmembers:['loooser']}}
-                                                   ,null
+
                                                    ,function(err,group){
                                                         should.not.exist(err)
                                                         should.exist(group)
@@ -506,7 +506,7 @@ describe('openldap ldapjs_editor',function(){
                          }
                         ,function(user,group,cb){
                              ctmldap.deleteGroup({params:{cn:group.cn}}
-                                                 ,null
+
                                                 ,function(err){
                                                      should.not.exist(err)
                                                      cb(null,user)
@@ -514,7 +514,7 @@ describe('openldap ldapjs_editor',function(){
                          }
                         ,function(user,cb){
                              ctmldap.deleteUser({params:{uid:user.uid}}
-                                               ,null
+
                                                ,function(e,r){ cb(e) })
                          }]
                        ,function(err){
@@ -535,7 +535,7 @@ describe('openldap ldapjs_editor',function(){
                              ctmldap.createGroup({params:{cn:'summers'
                                                          ,uniquemember:['jmarca'
                                                                        ,'crindt']}}
-                                                ,null
+
                                                 ,function(err,group){
                                                      should.not.exist(err)
                                                      should.exist(group)
@@ -548,7 +548,7 @@ describe('openldap ldapjs_editor',function(){
                         ,function(group,cb){
                              ctmldap.removeUserFromGroup({params:{cn:'summers'
                                                                  ,dropmembers:['crindt']}}
-                                                        ,null
+
                                                         ,function(err,group){
                                                              should.not.exist(err)
                                                              should.exist(group)
@@ -560,7 +560,7 @@ describe('openldap ldapjs_editor',function(){
                         ,function(group,cb){
                              ctmldap.removeUserFromGroup({params:{cn:'summers'
                                                                  ,dropmembers:['jmarca']}}
-                                                        ,null
+
                                                         ,function(err,group){
                                                              if(err) console.log('baka '+JSON.stringify(err))
                                                              should.not.exist(err)
@@ -570,7 +570,7 @@ describe('openldap ldapjs_editor',function(){
                          }
                         ,function(cb){
                              ctmldap.deleteGroup({params:{cn:'summers'}}
-                                                 ,null
+
                                                 ,function(err){
                                                      should.not.exist(err)
                                                      cb()
@@ -592,7 +592,7 @@ describe('openldap ldapjs_editor',function(){
       ,function(done){
         async.waterfall([function(cb){
                              ctmldap.loadGroup({params:{cn:'springs'}}
-                                                ,null
+
                                                 ,function(err,group){
                                                      should.exist(err)
                                                      should.not.exist(group)
@@ -603,7 +603,7 @@ describe('openldap ldapjs_editor',function(){
                              ctmldap.addUserToGroup({params:{cn:'springs'
                                                             ,create:true
                                                             ,uniquemember:['jmarca']}}
-                                                        ,null
+
                                                    ,function(err,group){
                                                         if(err) console.log('baka '+JSON.stringify(err))
                                                         should.not.exist(err)
@@ -617,7 +617,7 @@ describe('openldap ldapjs_editor',function(){
                         ,function(group,cb){
                              ctmldap.removeUserFromGroup({params:{cn:'springs'
                                                                  ,dropmembers:['jmarca']}}
-                                                        ,null
+
                                                         ,function(err,group){
                                                              should.not.exist(err)
                                                              should.not.exist(group)
@@ -641,7 +641,7 @@ describe('openldap ldapjs_editor',function(){
                                                            ,'givenname':'Flatly'
                                                            ,'sn':'Refusing'
                                                            }}
-                                                  ,null
+
                                                   ,function(err,user){
                                                        if(err) console.log('gag1: '+JSON.stringify(err))
                                                        cb(err,user)
@@ -651,7 +651,7 @@ describe('openldap ldapjs_editor',function(){
                              ctmldap.addUserToGroup({params:{cn:'falls'
                                                             ,create:true
                                                             ,uniquemember:[user.uid]}}
-                                                   ,null
+
                                                    ,function(err){
                                                         if(err) console.log('gag2: '+JSON.stringify(err))
                                                         cb(err,user)
@@ -661,7 +661,7 @@ describe('openldap ldapjs_editor',function(){
                              ctmldap.addUserToGroup({params:{cn:'weekends'
                                                             ,create:true
                                                             ,uniquemember:[user.uid]}}
-                                                   ,null
+
                                                    ,function(err){
                                                         if(err) console.log('gag3: '+JSON.stringify(err))
                                                         cb(err,user)
@@ -669,7 +669,7 @@ describe('openldap ldapjs_editor',function(){
                          }
                         ,function(user,cb){
                              ctmldap.deleteUser({params:{'uid':'trouble4'}}
-                                               ,null
+
                                                ,function(err){
                                                         if(err) console.log('gag4: '+JSON.stringify(err))
                                                         cb(err)
@@ -677,7 +677,7 @@ describe('openldap ldapjs_editor',function(){
                          }
                         ,function(cb){
                              ctmldap.loadGroup({params:{cn:'falls'}}
-                                              ,null
+
                                               ,function(err,group){
                                                    should.exist(err)
                                                    should.not.exist(group)
