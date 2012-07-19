@@ -145,13 +145,11 @@ describe('openldap ldapjs_editor',function(){
                                       ,'givenname':'Studly'
                                       ,'sn':'McDude'
                                       }},function(err,user,barePassword){
-                                             console.log('new user')
                                              should.not.exist(err);
                                              should.exist(user);
                                              ctmldap.deleteUser({params:{'uid':'trouble2'}}
 
                                                                ,function(err){
-                                                                    console.log('delete user')
                                                                     if(err){ console.log(JSON.stringify(err)) }
                                                                     should.not.exist(err)
                                                                     done()
