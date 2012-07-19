@@ -145,14 +145,16 @@ describe('openldap ldapjs_editor',function(){
                                       ,'givenname':'Studly'
                                       ,'sn':'McDude'
                                       }},function(err,user,barePassword){
-                                                  should.not.exist(err);
-                                                  should.exist(user);
-                                                  ctmldap.deleteUser({params:{'uid':'trouble2'}}
+                                             console.log('new user')
+                                             should.not.exist(err);
+                                             should.exist(user);
+                                             ctmldap.deleteUser({params:{'uid':'trouble2'}}
 
-                                                                    ,function(err){
-                                                                         if(err){ console.log(JSON.stringify(err)) }
-                                                                         should.not.exist(err)
-                                                                         done()
+                                                               ,function(err){
+                                                                    console.log('delete user')
+                                                                    if(err){ console.log(JSON.stringify(err)) }
+                                                                    should.not.exist(err)
+                                                                    done()
                                                                     });
                                               });
     });
@@ -211,7 +213,7 @@ describe('openldap ldapjs_editor',function(){
                                                                     client.bind(ctmldap.getDSN(user),barePassword,function(err){
                                                                         should.not.exist(err)
                                                                         var dsn = 'ou=people,dc=ctmlabs,dc=org';
-                                                                        ctmldap.query(null,dsn,client,function(err,result){
+                                                                        ctmldap.query(null,dsn,['cn','uid'],client,function(err,result){
                                                                             should.not.exist(err)
                                                                             should.exist(result)
                                                                             client.unbind()
@@ -677,7 +679,7 @@ describe('openldap ldapjs_editor',function(){
                          }
                         ,function(cb){
                              ctmldap.loadGroup({params:{cn:'falls'}}
-                                              
+
                                               ,function(err,group){
                                                    should.exist(err)
                                                    should.not.exist(group)
