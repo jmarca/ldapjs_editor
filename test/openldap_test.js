@@ -25,8 +25,41 @@ var delete_groups = [
                     ,'winters'
                     ,'summers'
                     ,'springs'
-                    ,newusergroup
+//                    ,newusergroup
 ]
+
+
+// helper for testing without express
+
+
+/**
+* Return the value of param `name` when present or `defaultValue`.
+*
+* - Checks route placeholders, ex: _/user/:id_
+* - Checks body params, ex: id=12, {"id":12}
+* - Checks query string params, ex: ?id=12
+*
+* To utilize request bodies, `req.body`
+* should be an object. This can be done by using
+* the `connect.bodyParser()` middleware.
+*
+* @param {String} name
+* @param {Mixed} defaultValue
+* @return {String}
+* @api public
+*/
+
+var get_param = function(name, defaultValue){
+  var params = this.params || {};
+  var body = this.body || {};
+  var query = this.query || {};
+  if (null != params[name] && params.hasOwnProperty(name)) return params[name];
+  if (null != body[name]) return body[name];
+  if (null != query[name]) return query[name];
+  return defaultValue;
+};
+
+
 
 var _before = function(setupdone){
         if (!setupdone) setupdone = function(){ return null; };
@@ -81,11 +114,17 @@ var _before = function(setupdone){
                       )
     }
 
+var erq = require('../node_modules/express/lib/request')
 describe('openldap ldapjs_editor',function(){
-    before(_before)
+    //before(_before)
 
     it('should load a known user',function(done){
-        ctmldap.loadUser({params:{'uid':'jmarca'}}
+        var req =  { __proto__: erq };
+
+        req.params={'uid':'jmarca'}
+        req.param('uid').should.equal('jmarca')
+
+        ctmldap.loadUser(req
                         ,function(err,user){
                                   should.not.exist(err);
                                   should.exist(user);
@@ -96,7 +135,10 @@ describe('openldap ldapjs_editor',function(){
                               });
     });
     it('should load a known user with group membership',function(done){
-        ctmldap.loadUser({params:{'uid':'jmarca','memberof':true}}
+        var req =  { __proto__: erq };
+        req.params={'uid':'jmarca','memberof':true}
+
+        ctmldap.loadUser(req
                         ,function(err,user){
                                   should.not.exist(err);
                                   should.exist(user);
@@ -108,7 +150,10 @@ describe('openldap ldapjs_editor',function(){
                               });
     });
     it('should load a known user with password hash',function(done){
-        ctmldap.loadUser({params:{'uid':'jmarca','userpassword':true}}
+        var req =  { __proto__: erq };
+        req.params={'uid':'jmarca','userpassword':true}
+
+        ctmldap.loadUser(req
                         ,function(err,user){
                                   should.not.exist(err);
                                   should.exist(user);
@@ -120,11 +165,14 @@ describe('openldap ldapjs_editor',function(){
     });
     it('should fail to modify to a chosen password with incorrect current password'
       ,function(don){
-           ctmldap.editUser({params:{'uid':'jmarca'
-                                    ,'userpassword':'poobah'
-                                    ,'currentpassword':'notit'
-                                    }}
+           var req =  { __proto__: erq };
+           req.params={'uid':'jmarca','userpassword':true}
+           req.params={'uid':'jmarca'}
+           req.body={'userpassword':'poobah'
+                    ,'currentpassword':'notit'
+                    }
 
+           ctmldap.editUser(req
                            ,function(err,barePassword){
                                 should.exist(err)
                                 should.not.exist(barePassword)
@@ -133,38 +181,72 @@ describe('openldap ldapjs_editor',function(){
        });
 
     it('should not create a duplicate entry',function(done){
-        ctmldap.createNewUser({params:{'uid':'jmarca'}},function(err,user){
+           var req =  { __proto__: erq };
+           req.params={'uid':'jmarca','userpassword':true}
+        ctmldap.createNewUser(req
+                              ,function(err,user){
             should.exist(err);
             should.not.exist(user);
             done()
         });
     });
     it('should create and delete a new entry',function(done){
-        ctmldap.createNewUser({params:{'uid':'trouble2'
-                                      ,'mail':test_email
-                                      ,'givenname':'Studly'
-                                      ,'sn':'McDude'
-                                      }},function(err,user,barePassword){
-                                             should.not.exist(err);
-                                             should.exist(user);
-                                             ctmldap.deleteUser({params:{'uid':'trouble2'}}
+        async.waterfall([//  function(cb){
+        //     var req =  { __proto__: erq };
+        // req.params={'uid':'trouble2'}
 
-                                                               ,function(err){
-                                                                    if(err){ console.log(JSON.stringify(err)) }
-                                                                    should.not.exist(err)
-                                                                    done()
-                                                                    });
-                                              });
+        //                       ctmldap.deleteUser(req
+        //                                         ,function(err){
+        //                                              if(err){ console.log('bad delete'+JSON.stringify(err)) }
+        //                                              should.not.exist(err)
+        //                                              cb(err)
+        //                                          })
+        //                   }
+        //                  ,
+            function(cb){
+                var req =  { __proto__: erq };
+                req.params={'uid':'trouble2'}
+                req.body={'uid':'trouble2'
+                         ,'mail':test_email
+                         ,'givenname':'Studly'
+                         ,'sn':'McDude'
+                         }
+
+                ctmldap.createNewUser(req
+                                     ,function(err,user,barePassword){
+                                          should.not.exist(err);
+                                          should.exist(user);
+                                          console.log('created user: ' + user)
+                                          cb(err,user)
+                                      })
+            }
+                        ,function(user,cb){
+                             var req =  { __proto__: erq };
+                             req.params={'uid':'trouble2'}
+                             ctmldap.deleteUser(req
+                                               ,function(err){
+                                                    if(err){ console.log('bad delete'+JSON.stringify(err)) }
+                                                    should.not.exist(err)
+                                                    cb(err)
+                                                })
+                         }
+        ]
+                       ,done
+                       )
+
     });
 
 
     it('should create and delete a new entry with camel case',function(done){
         async.waterfall([function(cb){
-                             ctmldap.createNewUser({params:{'uid':'trouble'
-                                                           ,'Mail':test_email
-                                                           ,'GivenName':'Studly'
-                                                           ,'SN':'McDude'
-                                                           }}
+                             var req =  { __proto__: erq };
+                             req.params={'uid':'trouble'}
+                             req.body={'uid':'trouble'
+                                      ,'Mail':test_email
+                                      ,'GivenName':'Studly'
+                                      ,'SN':'McDude'
+                                      }
+                             ctmldap.createNewUser(req
                                                   ,function(err,user,barePassword){
                                                        should.not.exist(err);
                                                        should.exist(user);
@@ -172,8 +254,9 @@ describe('openldap ldapjs_editor',function(){
                                                    })
                          }
                         ,function(u,barePassword,cb){
-                             ctmldap.loadUser({params:{'uid':'trouble',memberof:1}}
-
+                             var req =  { __proto__: erq };
+                             req.params={'uid':'trouble',memberof:1}
+                             ctmldap.loadUser(req
                                              ,function(err,user){
                                                   should.not.exist(err)
                                                   should.exist(user)
@@ -184,12 +267,13 @@ describe('openldap ldapjs_editor',function(){
                                               })
                          }
                         ,function(u,bp,cb){
-                             ctmldap.deleteUser({params:{'uid':'trouble'}}
-
-                                                                    ,function(err){
-                                                                         should.not.exist(err)
-                                                                         cb(err)
-                                                                     });
+                             var req =  { __proto__: erq };
+                             req.params={'uid':'trouble',memberof:1}
+                             ctmldap.deleteUser(req
+                                               ,function(err){
+                                                    should.not.exist(err)
+                                                    cb(err)
+                                                });
                          }]
                        ,function(err){
                             done(err);
@@ -197,143 +281,173 @@ describe('openldap ldapjs_editor',function(){
         return null;
     });
     it('should create, login as, do a search, and delete a new entry with camel case',function(done){
-        ctmldap.createNewUser({params:{'uid':'trouble3'
+        ;
+        async.waterfall([function(cb){
+                             var req =  { __proto__: erq };
+                             req.params={'uid':'trouble3'}
+                             req.body={'uid':'trouble3'
                                       ,'Mail':test_email
                                       ,'GivenName':'Studly'
                                       ,'SN':'McFly'
-                                      }},function(err,user,barePassword){
-                                                  should.not.exist(err);
-                                                  should.exist(user);
-                                                  async.series([function(cb){
-                                                                    // try to log in with the new account
-                                                                    var client = ctmldap.getClient();
-
-                                                                    client.bind(ctmldap.getDSN(user),barePassword,function(err){
-                                                                        should.not.exist(err)
-                                                                        var dsn = 'ou=people,dc=ctmlabs,dc=org';
-                                                                        ctmldap.query(null,dsn,['cn','uid'],client,function(err,result){
-                                                                            should.not.exist(err)
-                                                                            should.exist(result)
-                                                                            client.unbind()
-                                                                            cb()
-                                                                        });
-                                                                    });
-                                                                }
-                                                               ,function(cb){
-                                                                    ctmldap.deleteUser({params:{'uid':'trouble3'}}
-
-                                                                                      ,function(err){
-                                                                                           should.not.exist(err)
-                                                                                           cb()
-                                                                                       });
-                                                                }
-                                                               ]
-                                                              ,function(err){
-                                                                   should.not.exist(err)
-                                                                   done()
-                                                               });
-                                                      return null;
-                                                  })
-
-                                              });
+                                      }
+                             ctmldap.createNewUser(req
+                                                  ,function(err,user,barePassword){
+                                                       should.not.exist(err);
+                                                       should.exist(user);
+                                                       cb(err,user,barePassword)
+                                                   })
+                         }
+                        ,function(user,barePassword,cb){
+                             // try to log in with the new account
+                             var client = ctmldap.getClient();
+                             client.bind(ctmldap.getDSN(user.uid)
+                                        ,barePassword
+                                        ,function(err){
+                                             should.not.exist(err)
+                                             var dsn = 'ou=people,dc=ctmlabs,dc=org';
+                                             ctmldap.query(null,dsn,['cn','uid'],client,function(err,result){
+                                                 should.not.exist(err)
+                                                 should.exist(result)
+                                                 client.unbind()
+                                                 cb(err)
+                                             });
+                                         });
+                         }
+                        ,function(cb){
+                             var req =  { __proto__: erq };
+                             req.params={'uid':'trouble3'}
+                             ctmldap.deleteUser(req
+                                               ,function(err){
+                                                    should.not.exist(err)
+                                                    cb(err)
+                                                });
+                         }
+                        ]
+                       ,function(err){
+                            should.not.exist(err)
+                            done()
+                        });
+        return null;
+    });
 
 
     it('should create and modify a new entry',function(done){
-        ctmldap.createNewUser({params:{'uid':'more trouble'
+        async.waterfall([function(cb){
+                             var req =  { __proto__: erq };
+                             req.params={'uid':'more trouble'}
+                             req.body={'uid':'more trouble'
                                       ,'mail':test_email
                                       ,'givenName':'Bran'
                                       ,'sn':'McMuphin'
-                                      }},function(err,user){
-                                                  should.not.exist(err);
-                                                  should.exist(user);
-                                                  var pass;
-                                                  async.series([function(cb){
-                                                                    ctmldap.resetPassword({params:{'uid':'more trouble'}}
+                                      }
 
-                                                                                         ,function(err,barePassword){
-                                                                                              should.not.exist(err)
-                                                                                              should.exist(barePassword)
-                                                                                              pass = barePassword
-                                                                                              ctmldap.loadUser({params:{'uid':'more trouble'
-                                                                                                                  ,'userpassword':true}}
+                             ctmldap.createNewUser(req
+                                                  ,function(err,user){
+                                                       should.not.exist(err);
+                                                       should.exist(user);
+                                                       cb(err,user)
+                                                   })
+                         }
+                        ,function(user,cb){
+                             var req =  { __proto__: erq };
+                             req.params={'uid':'more trouble'}
+                             ctmldap.resetPassword(req
+                                                  ,function(err,barePassword){
+                                                       should.not.exist(err)
+                                                       should.exist(barePassword)
+                                                       cb(err,barePassword)
+                                                   })
+                         }
+                        ,function(pass,cb){
+                             var req =  { __proto__: erq };
+                             req.params={'uid':'more trouble'
+                                        ,'userpassword':true}
+                             ctmldap.loadUser(req
+                                             ,function(err,user){
+                                                  should.not.exist(err)
+                                                  user.should.have.property('userpassword')
 
-                                                                                                              ,function(err,user){
-                                                                                                                   should.not.exist(err)
-                                                                                                                   user.should.have.property('userpassword')
-
-                                                                                                                   ssha.checkssha(barePassword
-                                                                                                                                 ,user.userpassword
-                                                                                                                                 ,function(err,result){
-                                                                                                                                      should.not.exist(err);
-                                                                                                                                      should.exist(result);
-                                                                                                                                      result.should.equal(true);
-                                                                                                                                      cb()
-                                                                                                                                  })
-                                                                                                               })
-                                                                                          })
-                                                                }
-                                                               ,function(cb){
-                                                                    ctmldap.editUser({params:{'uid':'more trouble'
-                                                                                             ,'mail':'farfalla@activimetrics.com'
-                                                                                             ,'sn':'McBouncy'
-                                                                                             }}
-
-                                                                                    ,function(err){
-                                                                                         should.not.exist(err)
-                                                                                         ctmldap.loadUser({params:{'uid':'more trouble'}}
-
-                                                                                                         ,function(err,user){
-                                                                                                              should.not.exist(err)
-                                                                                                              user.mail.should.equal('farfalla@activimetrics.com')
-                                                                                                              user.sn.should.equal('McBouncy')
-                                                                                                              user.cn.should.equal('Bran McBouncy')
-                                                                                                              cb()
-                                                                                                          });
-                                                                                     })
-                                                                }
-                                                               ,function(cb){
-                                                                    ctmldap.editUser({params:{'uid':'more trouble'
-                                                                                             ,'mail':'baka@activimetrics.com'
-                                                                                             ,'sn':'McBlighty'
-                                                                                             ,'userPassword':'smeagol'
-                                                                                             ,'currentPassword':pass
-                                                                                             }}
-
-                                                                                    ,function(err){
-                                                                                         should.not.exist(err)
-                                                                                         ctmldap.loadUser({params:{'uid':'more trouble'
-                                                                                                                  ,'userpassword':true
-                                                                                                                  }}
-
-                                                                                                         ,function(err,user){
-                                                                                                              should.not.exist(err)
-                                                                                                              user.mail.should.equal('baka@activimetrics.com')
-                                                                                                              user.sn.should.equal('McBlighty')
-                                                                                                              user.cn.should.equal('Bran McBlighty')
-                                                                                                              ssha.checkssha('smeagol'
-                                                                                                                            ,user.userpassword
-                                                                                                                            ,function(err,result){
-                                                                                                                                 should.not.exist(err);
-                                                                                                                                 should.exist(result);
-                                                                                                                                 result.should.equal(true);
-                                                                                                                                 cb()
-                                                                                                                             })
-                                                                                                          });
-                                                                                     })
-                                                                }
-                                                               ,function(cb){
-                                                                    ctmldap.deleteUser({params:{'uid':'more trouble'}}
-
-                                                                                      ,function(err){
-                                                                                           should.not.exist(err)
-                                                                                           cb()
-                                                                                       });
-                                                                }]
-                                                               ,function(err){
-                                                                    done(err);
-                                                                });
-
+                                                  ssha.checkssha(pass
+                                                                ,user.userpassword
+                                                                ,function(err,result){
+                                                                     should.not.exist(err);
+                                                                     should.exist(result);
+                                                                     result.should.equal(true);
+                                                                     cb(err,pass)
+                                                                 })
+                                              })
+                         }
+                        ,function(pass,cb){
+                             var req =  { __proto__: erq };
+                             req.params={'uid':'more trouble'}
+                             req.body={'uid':'more trouble'
+                                      ,'mail':'farfalla@activimetrics.com'
+                                      ,'sn':'McBouncy'
+                                      }
+                             ctmldap.editUser(req
+                                             ,function(err){
+                                                  should.not.exist(err)
+                                                  cb(err,pass)
+                                              })
+                         }
+                        ,function(pass,cb){
+                             var req =  { __proto__: erq };
+                             req.params={'uid':'more trouble'}
+                             ctmldap.loadUser(req
+                                             ,function(err,user){
+                                                  should.not.exist(err)
+                                                  user.mail.should.equal('farfalla@activimetrics.com')
+                                                  user.sn.should.equal('McBouncy')
+                                                  user.cn.should.equal('Bran McBouncy')
+                                                  cb(err,pass)
                                               });
+                         }
+                        ,function(pass,cb){
+                             var req =  { __proto__: erq };
+                             req.params={'uid':'more trouble'}
+                             req.body={'uid':'more trouble'
+                                      ,'mail':'baka@activimetrics.com'
+                                      ,'sn':'McBlighty'
+                                      ,'userPassword':'smeagol'
+                                      ,'currentPassword':pass
+                                      }
+                             ctmldap.editUser(req
+                                             ,function(err){
+                                                  should.not.exist(err)
+                                                  cb(err)
+                                              })
+                         }
+                        ,function(cb){
+                             var req =  { __proto__: erq };
+                             req.params={'uid':'more trouble'
+                                        ,'userpassword':true}
+                             ctmldap.loadUser(req
+                                             ,function(err,user){
+                                                  should.not.exist(err)
+                                                  user.mail.should.equal('baka@activimetrics.com')
+                                                  user.sn.should.equal('McBlighty')
+                                                  user.cn.should.equal('Bran McBlighty')
+                                                  ssha.checkssha('smeagol'
+                                                                ,user.userpassword
+                                                                ,function(err,result){
+                                                                     should.not.exist(err);
+                                                                     should.exist(result);
+                                                                     result.should.equal(true);
+                                                                     cb()
+                                                                 })
+                                              });
+                         }]
+                       ,function(e){
+                            var req =  { __proto__: erq };
+                            req.params={'uid':'more trouble'}
+
+                            ctmldap.deleteUser(req
+                                              ,function(err){
+                                                   should.not.exist(err)
+                                                   done(e)
+                                               });
+
+                        })
     })
 
     it('should get a list of all users',function(done){

@@ -1,5 +1,5 @@
 
-MOCHA_OPTS=
+MOCHA_OPTS=bail
 REPORTER = spec
 
 
