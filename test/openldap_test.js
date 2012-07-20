@@ -3,6 +3,7 @@ var ctmldap = require('../lib/ldapjs_editor')
 var ssha = require('openldap_ssha')
 
 var express = require('express');
+var erq = require('../node_modules/express/lib/request')
 
 var request = require('supertest');
 var async = require('async')
@@ -29,37 +30,6 @@ var delete_groups = [
 ]
 
 
-// helper for testing without express
-
-
-/**
-* Return the value of param `name` when present or `defaultValue`.
-*
-* - Checks route placeholders, ex: _/user/:id_
-* - Checks body params, ex: id=12, {"id":12}
-* - Checks query string params, ex: ?id=12
-*
-* To utilize request bodies, `req.body`
-* should be an object. This can be done by using
-* the `connect.bodyParser()` middleware.
-*
-* @param {String} name
-* @param {Mixed} defaultValue
-* @return {String}
-* @api public
-*/
-
-var get_param = function(name, defaultValue){
-  var params = this.params || {};
-  var body = this.body || {};
-  var query = this.query || {};
-  if (null != params[name] && params.hasOwnProperty(name)) return params[name];
-  if (null != body[name]) return body[name];
-  if (null != query[name]) return query[name];
-  return defaultValue;
-};
-
-
 
 var _before = function(setupdone){
         if (!setupdone) setupdone = function(){ return null; };
@@ -67,22 +37,17 @@ var _before = function(setupdone){
                           if(_.isEmpty(delete_groups)) return cb()
                           console.log('cleaning groups')
                           async.forEachSeries(delete_groups
-                                         ,function(cn,cb2){
-                                              ctmldap.deleteGroup({params:{cn:cn}}
-
-                                                                ,function(err){
-                                                                     if(err){
-                                                                         if(err.name && err.name=='NoSuchObjectError'){
-                                                                             // okay
-                                                                             return cb2()
-                                                                         }else{
-                                                                             return cb2(err)
-                                                                         }
-
-                                                                     }
-                                                                     return cb2();
-                                                                 })
-                                          }
+                                             ,function(cb2){
+                                                  var req =  { __proto__: erq };
+                                                  req.params={'cn':cn}
+                                                  ctmldap.deleteGroup(req
+                                                                     ,function(err){
+                                                                          if(err.name && err.name=='NoSuchObjectError'){
+                                                                              return  cb2()
+                                                                          }
+                                                                          return cb2(err)
+                                                                      });
+                                              }
                                              ,cb)
                           return null;
                       }
@@ -90,31 +55,28 @@ var _before = function(setupdone){
                           if(_.isEmpty(delete_users)) return cb()
                           console.log('cleaning users')
                           async.forEachSeries(delete_users
-                                         ,function(uid,cb2){
-                                              ctmldap.deleteUser({params:{'uid':uid}}
+                                             ,function(uid,cb2){
+                                                  var req =  { __proto__: erq };
+                                                  req.params={'uid':uid}
+                                                  ctmldap.deleteUser(req
+                                                                    ,function(err){
+                                                                         if(err){
+                                                                             if(err.name && err.name=='NoSuchObjectError'){
+                                                                                 return cb2()
+                                                                             }
 
-                                                                ,function(err){
-                                                                     if(err){
-                                                                         if(err.name && err.name=='NoSuchObjectError'){
-                                                                             // okay
-                                                                             return cb2()
-                                                                         }else{
-                                                                             return cb2(err)
                                                                          }
-
-                                                                     }
-                                                                     return cb2();
-                                                                 })
-                                          }
-                                               ,cb)
+                                                                         return cb2();
+                                                                     })
+                                              }
+                                             ,cb)
                           return null;
-                        }
+                      }
                      ]
-                      ,setupdone
-                      )
+                    ,setupdone
+                    )
     }
 
-var erq = require('../node_modules/express/lib/request')
 describe('openldap ldapjs_editor',function(){
     //before(_before)
 
