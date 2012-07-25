@@ -263,7 +263,7 @@ describe('openldap ldapjs_editor',function(){
                                         ,function(err){
                                              should.not.exist(err)
                                              var dsn = 'ou=people,dc=ctmlabs,dc=org';
-                                             ctmldap.query(null,dsn,['cn','uid'],client,function(err,result){
+                                            ctmldap.query(null,dsn,['cn','uid'],'(objectclass=*)',client,function(err,result){
                                                  should.not.exist(err)
                                                  should.exist(result)
                                                  client.unbind()
@@ -417,6 +417,15 @@ describe('openldap ldapjs_editor',function(){
             users.length.should.be.above(45)
             users[2].should.have.property('memberof')
             users[2].memberof.should.be.an.instanceOf(Array)
+
+            // user list should only include Person objects
+            _.each(users,function(user) {
+                var match = _.filter(user.objectClass,function(o){ 
+                    return o.match(/person/i)
+                })
+                match.length.should.be.above(0)
+            })
+
             done()
         });
     })
@@ -427,9 +436,18 @@ describe('openldap ldapjs_editor',function(){
             should.not.exist(err)
             should.exist(groups)
             // need a better test here for making sure I got a proper list of groups
-            groups.length.should.be.above(5)
+            groups.length.should.be.above(4)
             groups[2].should.have.property('uniquemember')
             groups[2].should.not.have.property('uniqueMember')
+
+            // group list should only include GroupOfUniqueNames objects
+            _.each(groups,function(group) {
+                var match = _.filter(group.objectClass,function(o){ 
+                    return o.match(/groupofuniquenames/i)
+                })
+                match.length.should.be.above(0)
+            })
+
             done()
         });
     })
