@@ -2,6 +2,7 @@ var should = require('should')
 var ctmldap = require('../lib/ldapjs_editor')
 var ssha = require('openldap_ssha')
 
+var EventEmitter = require('events').EventEmitter;
 var express = require('express');
 var erq = require('../node_modules/express/lib/request')
 
@@ -11,6 +12,9 @@ var _ = require('underscore')
 var env = process.env;
 var test_email = env.LDAP_USER_EMAIL;
 var newusergroup = env.LDAP_NEW_USER_GROUP || 'newusers'
+
+var manager_dn = env.LDAP_DN;
+var manager_password = env.LDAP_PASS;
 
 var delete_users = [
     'trouble'
@@ -263,7 +267,7 @@ describe('openldap ldapjs_editor',function(){
                                         ,function(err){
                                              should.not.exist(err)
                                              var dsn = 'ou=people,dc=ctmlabs,dc=org';
-                                             ctmldap.query(null,dsn,['cn','uid'],client,function(err,result){
+                                            ctmldap.query(null,dsn,['cn','uid'],'(objectclass=*)',client,function(err,result){
                                                  should.not.exist(err)
                                                  should.exist(result)
                                                  client.unbind()
@@ -417,6 +421,12 @@ describe('openldap ldapjs_editor',function(){
             users.length.should.be.above(45)
             users[2].should.have.property('memberof')
             users[2].memberof.should.be.an.instanceOf(Array)
+
+            // user list should only include Person objects
+            _.each(users,function(user) {
+                user.objectClass.should.include('person')
+            })
+
             done()
         });
     })
@@ -427,9 +437,15 @@ describe('openldap ldapjs_editor',function(){
             should.not.exist(err)
             should.exist(groups)
             // need a better test here for making sure I got a proper list of groups
-            groups.length.should.be.above(5)
+            groups.length.should.be.above(4)
             groups[2].should.have.property('uniquemember')
             groups[2].should.not.have.property('uniqueMember')
+
+            // group list should only include GroupOfUniqueNames objects
+            _.each(groups,function(group) {
+                group.objectClass.should.include('groupOfUniqueNames')
+            })
+
             done()
         });
     })
@@ -787,6 +803,50 @@ describe('openldap ldapjs_editor',function(){
                         })
 
     });
+
+    describe('getClient'
+            ,function(){
+                 it('should get a client to use'
+                   ,function(done){
+                        var client = ctmldap.getClient()
+                        client.should.be.ok
+                        client.should.be.instanceOf(EventEmitter)
+                        //client.should.be.instanceOf(Client)
+                        // duck type
+                        client.should.have.property('connectTimeout')
+                        client.should.have.property('host')
+                        client.should.have.property('log')
+                        client.should.have.property('port')
+                        client.should.have.property('secure')
+                        client.should.have.property('socketPath')
+                        client.should.have.property('timeout')
+                        client.should.have.property('url')
+                        client.should.have.property('socket')
+                        done()
+                    })
+             })
+
+
+    describe('query'
+            ,function(){
+                 it('should allow arbitrary ldap queries'
+                   ,function(done){
+                        var client = ctmldap.getClient()
+                        client.bind(manager_dn,manager_password
+                                   ,function(err){
+                                        should.not.exist(err)
+                                        var dsn = 'dc=ctmlabs,dc=org';
+                                        ctmldap.query(null,dsn,['dn','cn','objectclass'],'(objectclass=groupOfNames)',client,function(err,result){
+                                            should.not.exist(err)
+                                            should.exist(result)
+                                            result.should.be.instanceOf(Array)
+                                            result.should.be.empty
+                                            client.unbind()
+                                            done()
+                                        });
+                                    })
+                    })
+             })
 
 
 });
