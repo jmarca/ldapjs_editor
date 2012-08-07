@@ -418,7 +418,7 @@ describe('openldap ldapjs_editor',function(){
             should.not.exist(err)
             should.exist(users)
             // need a better test here for making sure I got a proper list of users
-            users.length.should.be.above(45)
+            users.length.should.be.above(env.LDAP_EXPECTED_MIN_USERS || 45)
             users[2].should.have.property('memberof')
             users[2].memberof.should.be.an.instanceOf(Array)
 
@@ -464,7 +464,7 @@ describe('openldap ldapjs_editor',function(){
                           });
     });
 
-    it('should create a new group',function(done){
+    it('should create and modify a new group',function(done){
         async.waterfall([function(cb){
                              var req =  { __proto__: erq };
                              req.params={'uid':'luser'}
@@ -478,7 +478,7 @@ describe('openldap ldapjs_editor',function(){
                         ,function(user,pass,cb){
                              var req =  { __proto__: erq };
                              req.params={'cn':'losers'}
-                             req.body={cn:'losers'
+                             req.body={'cn':'losers'
                                       ,uniquemember:[ctmldap.getDSN(user)]}
                              ctmldap.createGroup(req
                                                 ,function(err,group){
@@ -491,6 +491,46 @@ describe('openldap ldapjs_editor',function(){
                                                      cb(null,user,group)
                                                  })
                          }
+                        ,function(user,group,cb){
+                             var req = { __proto__: erq };
+                             req.params={'cn':'losers'}
+                             req.body={'description':'Group of losers'}
+                             ctmldap.editGroup(req
+                                               ,function(err,group){
+                                                   should.not.exist(err)
+                                                   cb(null,user,group)
+                                               })
+                         }
+                        ,function(user,group,cb){
+                             var req = { __proto__: erq };
+                             req.params={'cn':'losers'}
+                             ctmldap.loadGroup(req
+                                               ,function(err,group){
+                                                   should.not.exist(err)
+                                                   group.description.should.equal('Group of losers')
+                                                   cb(err,user,group)
+                                               });
+                        }
+                        ,function(user,group,cb){
+                             var req = { __proto__: erq };
+                             req.params={'cn':'losers'}
+                             req.body={'description':''}  // delete field
+                             ctmldap.editGroup(req
+                                               ,function(err,group){
+                                                   should.not.exist(err)
+                                                   cb(null,user,group)
+                                               })
+                         }
+                        ,function(user,group,cb){
+                             var req = { __proto__: erq };
+                             req.params={'cn':'losers'}
+                             ctmldap.loadGroup(req
+                                               ,function(err,group){
+                                                   should.not.exist(err)
+                                                   group.should.not.have.property('description')
+                                                   cb(err,user,group)
+                                               });
+                        }
                         ,function(user,group,cb){
                              var req =  { __proto__: erq };
                              req.params={'uid':'luser',memberof:1}
@@ -551,7 +591,6 @@ describe('openldap ldapjs_editor',function(){
                         });
 
     });
-
 
 
     it('should add and remove users to a  group',function(done){
