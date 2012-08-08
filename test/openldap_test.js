@@ -125,6 +125,49 @@ describe('query'
 
 describe('openldap ldapjs_editor',function(){
     before(_before)
+    it('should load a known user by a mail address',function(done){
+        var req =  { __proto__: erq };
+
+        req.params={'mail':'jmarca@translab.its.uci.edu'}
+
+        ctmldap.loadUserByEmail(req
+                        ,function(err,user){
+                             should.not.exist(err);
+                             should.exist(user);
+                             user.should.be.an.instanceOf(Array)
+                             _.each(user
+                                   ,function(u){
+                                        u.should.have.property('uid','jmarca')
+                                        u.should.have.property('mail','jmarca@translab.its.uci.edu');
+                                        u.should.not.have.property('userpassword')
+                                        u.should.not.have.property('memberof')
+                                    })
+                             done()
+                         });
+    });
+    it('should load a known user by a mail address v2',function(done){
+        var req =  { __proto__: erq };
+
+        req.params={'mail':'jmarca@translab.its.uci.edu'
+                   ,'memberof':true}
+
+        ctmldap.loadUserByEmail(req
+                        ,function(err,user){
+                             should.not.exist(err);
+                             should.exist(user);
+                             user.should.be.an.instanceOf(Array)
+                             _.each(user
+                                   ,function(u){
+                                        u.should.have.property('uid','jmarca')
+                                        u.should.have.property('mail','jmarca@translab.its.uci.edu');
+                                        u.should.not.have.property('userpassword')
+                                        u.should.have.property('memberof')
+                                        u.memberof.should.be.an.instanceOf(Array)
+                                    })
+                             done()
+                         });
+    });
+
 
     it('should load a known user',function(done){
         var req =  { __proto__: erq };
@@ -172,23 +215,6 @@ describe('openldap ldapjs_editor',function(){
                                   done()
                               });
     });
-    it('should load a known user by a mail address',function(done){
-        var req =  { __proto__: erq };
-
-        req.params={'mail':'jmarca@translab.its.uci.edu'}
-
-        ctmldap.loadUserByEmail(req
-                        ,function(err,user){
-                             should.not.exist(err);
-                             should.exist(user);
-                             user.should.have.property('uid','jmarca')
-                             user.should.have.property('mail','jmarca@translab.its.uci.edu');
-                             user.should.not.have.property('userpassword')
-                             user.should.not.have.property('memberof')
-                             done()
-                         });
-    });
-
     it('should fail to modify to a chosen password with incorrect current password'
       ,function(don){
            var req =  { __proto__: erq };
