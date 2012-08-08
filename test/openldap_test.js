@@ -501,67 +501,6 @@ describe('openldap ldapjs_editor',function(){
                         })
     })
 
-    it('should reset password with only an email address',function(done){
-        var special_email = 'tweaky@example.com';
-        async.waterfall([function(cb){
-                             var req =  { __proto__: erq };
-                             req.params={'uid':'more bigger trouble'}
-                             req.body={'uid':'more bigger trouble'
-                                      ,'mail':special_email
-                                      ,'givenName':'Bran'
-                                      ,'sn':'McDonut'
-                                      }
-
-                             ctmldap.createNewUser(req
-                                                  ,function(err,user){
-                                                       should.not.exist(err);
-                                                       should.exist(user);
-                                                       cb(err,user)
-                                                   })
-                         }
-                        ,function(user,cb){
-                             var req =  { __proto__: erq };
-                             req.params={'mail':special_email}
-                             ctmldap.resetPassword(req
-                                                  ,function(err,barePassword){
-                                                       should.not.exist(err)
-                                                       should.exist(barePassword)
-                                                       cb(err,barePassword)
-                                                   })
-                         }
-                        ,function(pass,cb){
-                             var req =  { __proto__: erq };
-                             req.params={'uid':'more bigger trouble'
-                                        ,'userpassword':true}
-                             ctmldap.loadUser(req
-                                             ,function(err,user){
-                                                  should.not.exist(err)
-                                                  user.should.have.property('userpassword')
-
-                                                  ssha.checkssha(pass
-                                                                ,user.userpassword
-                                                                ,function(err,result){
-                                                                     should.not.exist(err);
-                                                                     should.exist(result);
-                                                                     result.should.equal(true);
-                                                                     cb(err,pass)
-                                                                 })
-                                              })
-                         }]
-                       ,function(e){
-                            var req =  { __proto__: erq };
-                            req.params={'uid':'more bigger trouble'}
-
-                            ctmldap.deleteUser(req
-                                              ,function(err){
-                                                   should.not.exist(err)
-                                                   done(e)
-                                               });
-
-                        })
-    })
-
-
     it('should get a list of all users',function(done){
         var req =  { __proto__: erq };
         ctmldap.loadUsers(req,function(err,users){
