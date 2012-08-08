@@ -1,6 +1,7 @@
 
 MOCHA_OPTS=bail
 REPORTER = spec
+TIMEOUT = 12000
 
 
 check: test
@@ -10,6 +11,7 @@ test: test-unit
 test-unit:
 	@NODE_ENV=test ./node_modules/.bin/mocha \
 		--reporter $(REPORTER) \
+		--timeout $(TIMEOUT) \
 		$(MOCHA_OPTS)
 
 test-cov: lib-cov
