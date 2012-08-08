@@ -22,6 +22,7 @@ var delete_users = [
                    ,'trouble3'
                    ,'trouble4'
                    ,'more trouble'
+                   ,'more bigger trouble'
                    ,'loooser'
                    ,'luser'
 ]
@@ -78,6 +79,50 @@ var _before = function(setupdone){
                     )
     }
 
+describe('getClient'
+        ,function(){
+             it('should get a client to use'
+               ,function(done){
+                    var client = ctmldap.getClient()
+                    client.should.be.ok
+                    client.should.be.instanceOf(EventEmitter)
+                    //client.should.be.instanceOf(Client)
+                    // duck type
+                    client.should.have.property('connectTimeout')
+                    client.should.have.property('host')
+                    client.should.have.property('log')
+                    client.should.have.property('port')
+                    client.should.have.property('secure')
+                    client.should.have.property('socketPath')
+                    client.should.have.property('timeout')
+                    client.should.have.property('url')
+                    client.should.have.property('socket')
+                    done()
+                })
+         })
+
+
+describe('query'
+                                  ,function(){
+                       it('should allow arbitrary ldap queries'
+      ,function(done){
+      var client = ctmldap.getClient()
+      client.bind(manager_dn,manager_password
+                ,function(err){
+                 should.not.exist(err)
+                 var dsn = 'dc=ctmlabs,dc=org';
+                 ctmldap.query(null,dsn,['dn','cn','objectclass'],'(objectclass=groupOfNames)',client,function(err,result){
+                       should.not.exist(err)
+                       should.exist(result)
+                       result.should.be.instanceOf(Array)
+                       result.should.be.empty
+                       client.unbind()
+                       done()
+                   });
+             })
+  })
+                   })
+
 describe('openldap ldapjs_editor',function(){
     before(_before)
 
@@ -89,8 +134,9 @@ describe('openldap ldapjs_editor',function(){
 
         ctmldap.loadUser(req
                         ,function(err,user){
-                                  should.not.exist(err);
-                                  should.exist(user);
+                             should.not.exist(err);
+                             should.exist(user);
+                             console.log(user)
                                   user.should.have.property('mail','jmarca@translab.its.uci.edu');
                                   user.should.not.have.property('userpassword')
                                   user.should.not.have.property('memberof')
@@ -126,6 +172,23 @@ describe('openldap ldapjs_editor',function(){
                                   done()
                               });
     });
+    it('should load a known user by a mail address',function(done){
+        var req =  { __proto__: erq };
+
+        req.params={'mail':'jmarca@translab.its.uci.edu'}
+
+        ctmldap.loadUserByEmail(req
+                        ,function(err,user){
+                             should.not.exist(err);
+                             should.exist(user);
+                             user.should.have.property('uid','jmarca')
+                             user.should.have.property('mail','jmarca@translab.its.uci.edu');
+                             user.should.not.have.property('userpassword')
+                             user.should.not.have.property('memberof')
+                             done()
+                         });
+    });
+
     it('should fail to modify to a chosen password with incorrect current password'
       ,function(don){
            var req =  { __proto__: erq };
@@ -411,6 +474,67 @@ describe('openldap ldapjs_editor',function(){
 
                         })
     })
+
+    it('should reset password with only an email address',function(done){
+        var special_email = 'tweaky@example.com';
+        async.waterfall([function(cb){
+                             var req =  { __proto__: erq };
+                             req.params={'uid':'more bigger trouble'}
+                             req.body={'uid':'more bigger trouble'
+                                      ,'mail':special_email
+                                      ,'givenName':'Bran'
+                                      ,'sn':'McDonut'
+                                      }
+
+                             ctmldap.createNewUser(req
+                                                  ,function(err,user){
+                                                       should.not.exist(err);
+                                                       should.exist(user);
+                                                       cb(err,user)
+                                                   })
+                         }
+                        ,function(user,cb){
+                             var req =  { __proto__: erq };
+                             req.params={'mail':special_email}
+                             ctmldap.resetPassword(req
+                                                  ,function(err,barePassword){
+                                                       should.not.exist(err)
+                                                       should.exist(barePassword)
+                                                       cb(err,barePassword)
+                                                   })
+                         }
+                        ,function(pass,cb){
+                             var req =  { __proto__: erq };
+                             req.params={'uid':'more bigger trouble'
+                                        ,'userpassword':true}
+                             ctmldap.loadUser(req
+                                             ,function(err,user){
+                                                  should.not.exist(err)
+                                                  user.should.have.property('userpassword')
+
+                                                  ssha.checkssha(pass
+                                                                ,user.userpassword
+                                                                ,function(err,result){
+                                                                     should.not.exist(err);
+                                                                     should.exist(result);
+                                                                     result.should.equal(true);
+                                                                     cb(err,pass)
+                                                                 })
+                                              })
+                         }]
+                       ,function(e){
+                            var req =  { __proto__: erq };
+                            req.params={'uid':'more bigger trouble'}
+
+                            ctmldap.deleteUser(req
+                                              ,function(err){
+                                                   should.not.exist(err)
+                                                   done(e)
+                                               });
+
+                        })
+    })
+
 
     it('should get a list of all users',function(done){
         var req =  { __proto__: erq };
@@ -803,50 +927,6 @@ describe('openldap ldapjs_editor',function(){
                         })
 
     });
-
-    describe('getClient'
-            ,function(){
-                 it('should get a client to use'
-                   ,function(done){
-                        var client = ctmldap.getClient()
-                        client.should.be.ok
-                        client.should.be.instanceOf(EventEmitter)
-                        //client.should.be.instanceOf(Client)
-                        // duck type
-                        client.should.have.property('connectTimeout')
-                        client.should.have.property('host')
-                        client.should.have.property('log')
-                        client.should.have.property('port')
-                        client.should.have.property('secure')
-                        client.should.have.property('socketPath')
-                        client.should.have.property('timeout')
-                        client.should.have.property('url')
-                        client.should.have.property('socket')
-                        done()
-                    })
-             })
-
-
-    describe('query'
-            ,function(){
-                 it('should allow arbitrary ldap queries'
-                   ,function(done){
-                        var client = ctmldap.getClient()
-                        client.bind(manager_dn,manager_password
-                                   ,function(err){
-                                        should.not.exist(err)
-                                        var dsn = 'dc=ctmlabs,dc=org';
-                                        ctmldap.query(null,dsn,['dn','cn','objectclass'],'(objectclass=groupOfNames)',client,function(err,result){
-                                            should.not.exist(err)
-                                            should.exist(result)
-                                            result.should.be.instanceOf(Array)
-                                            result.should.be.empty
-                                            client.unbind()
-                                            done()
-                                        });
-                                    })
-                    })
-             })
 
 
 });
