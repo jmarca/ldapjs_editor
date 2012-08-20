@@ -306,20 +306,18 @@ describe('openldap ldapjs_editor',function(){
                          }
                         ,function(u,barePassword,cb){
                              var req =  { __proto__: erq };
-                             req.params={'uid':'trouble',memberof:1}
+                             req.params={'uid':'trouble','memberof':true}
                              ctmldap.loadUser(req
                                              ,function(err,user){
                                                   should.not.exist(err)
                                                   should.exist(user)
-                                                  user.should.have.property('memberof')
-                                                  user.memberof.should.be.an.instanceOf(Array)
-                                                  user.memberof.should.include(ctmldap.getGroupDSN(newusergroup))
+                                                  user.should.not.have.property('memberof')
                                                   cb(err,user,barePassword)
                                               })
                          }
                         ,function(u,bp,cb){
                              var req =  { __proto__: erq };
-                             req.params={'uid':'trouble',memberof:1}
+                             req.params={'uid':'trouble',memberof:true}
                              ctmldap.deleteUser(req
                                                ,function(err){
                                                     should.not.exist(err)
@@ -629,7 +627,7 @@ describe('openldap ldapjs_editor',function(){
                                                   user_reload.should.have.property('memberof')
                                                   user_reload.memberof.should.be.an.instanceOf(Array)
                                                   user_reload.memberof.should.include(ctmldap.getGroupDSN('losers'))
-                                                  user_reload.memberof.should.include(ctmldap.getGroupDSN(newusergroup))
+                                                  user_reload.memberof.length.should.equal(1)
                                                   cb(null,user,group)
                                               })
                          }
