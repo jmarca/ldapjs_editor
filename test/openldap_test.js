@@ -111,7 +111,7 @@ describe('query'
                 ,function(err){
                  should.not.exist(err)
                  var dsn = 'dc=ctmlabs,dc=org';
-                 ctmldap.query(null,dsn,['dn','cn','objectclass'],'(objectclass=groupOfNames)',client,function(err,result){
+                     ctmldap.query(null,dsn,['dn','cn','objectclass'],'(objectclass=groupOfNames)',client,function(err,result){
                        should.not.exist(err)
                        should.exist(result)
                        result.should.be.instanceOf(Array)
@@ -125,6 +125,39 @@ describe('query'
 
 describe('openldap ldapjs_editor',function(){
     before(_before)
+
+    it('should load a known user',function(done){
+        var req =  { __proto__: erq };
+
+        req.params={'uid':'jmarca'}
+        req.param('uid').should.equal('jmarca')
+
+        ctmldap.loadUser(req
+                        ,function(err,user){
+                             should.not.exist(err);
+                             should.exist(user);
+                             console.log(user)
+                                  user.should.have.property('mail','jmarca@translab.its.uci.edu');
+                                  user.should.not.have.property('userpassword')
+                                  user.should.not.have.property('memberof')
+                                  done()
+                              });
+    });
+    it('should load a known user with group membership',function(done){
+        var req =  { __proto__: erq };
+        req.params={'uid':'jmarca','memberof':true}
+
+        ctmldap.loadUser(req
+                        ,function(err,user){
+                                  should.not.exist(err);
+                                  should.exist(user);
+                                  user.should.have.property('mail','jmarca@translab.its.uci.edu');
+                                  user.should.not.have.property('userpassword')
+                                  user.should.have.property('memberof')
+                                  user.memberof.should.be.an.instanceOf(Array)
+                                  done()
+                              });
+    });
     it('should load a known user by a mail address',function(done){
         var req =  { __proto__: erq };
 
@@ -168,39 +201,6 @@ describe('openldap ldapjs_editor',function(){
                          });
     });
 
-
-    it('should load a known user',function(done){
-        var req =  { __proto__: erq };
-
-        req.params={'uid':'jmarca'}
-        req.param('uid').should.equal('jmarca')
-
-        ctmldap.loadUser(req
-                        ,function(err,user){
-                             should.not.exist(err);
-                             should.exist(user);
-                             console.log(user)
-                                  user.should.have.property('mail','jmarca@translab.its.uci.edu');
-                                  user.should.not.have.property('userpassword')
-                                  user.should.not.have.property('memberof')
-                                  done()
-                              });
-    });
-    it('should load a known user with group membership',function(done){
-        var req =  { __proto__: erq };
-        req.params={'uid':'jmarca','memberof':true}
-
-        ctmldap.loadUser(req
-                        ,function(err,user){
-                                  should.not.exist(err);
-                                  should.exist(user);
-                                  user.should.have.property('mail','jmarca@translab.its.uci.edu');
-                                  user.should.not.have.property('userpassword')
-                                  user.should.have.property('memberof')
-                                  user.memberof.should.be.an.instanceOf(Array)
-                                  done()
-                              });
-    });
     it('should load a known user with password hash',function(done){
         var req =  { __proto__: erq };
         req.params={'uid':'jmarca','userpassword':true}
@@ -403,7 +403,7 @@ describe('openldap ldapjs_editor',function(){
                              var req =  { __proto__: erq };
                              req.params={'uid':'more trouble'}
                              ctmldap.resetPassword(req
-                                                  ,function(err,barePassword){
+                                                  ,function(err,user,barePassword){
                                                        should.not.exist(err)
                                                        should.exist(barePassword)
                                                        cb(err,barePassword)
@@ -417,7 +417,6 @@ describe('openldap ldapjs_editor',function(){
                                              ,function(err,user){
                                                   should.not.exist(err)
                                                   user.should.have.property('userpassword')
-
                                                   ssha.checkssha(pass
                                                                 ,user.userpassword
                                                                 ,function(err,result){
