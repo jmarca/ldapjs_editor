@@ -10,8 +10,7 @@
       "ldapjs":"*",
       "underscore":"*",
       "async":"*",
-      "openldap_ssha":"*",
-      "nodemailer":"*"
+      "openldap_ssha":"*"
   },
     "devDependencies":{
         "mocha":"*",

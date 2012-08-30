@@ -10,8 +10,11 @@ var request = require('supertest');
 var async = require('async')
 var _ = require('underscore')
 var env = process.env;
+
+var group_dsn_postfix = env.LDAP_GROUP_POSTFIX // for example 'ou=groups,dc=ctmlabs,dc=org'
+var user_dsn_postfix = env.LDAP_USER_POSTFIX // for example 'ou=people,dc=ctmlabs,dc=org'
+
 var test_email = env.LDAP_USER_EMAIL;
-var newusergroup = env.LDAP_NEW_USER_GROUP || 'newusers'
 
 var manager_dn = env.LDAP_DN;
 var manager_password = env.LDAP_PASS;
@@ -31,7 +34,6 @@ var delete_groups = [
                     ,'winters'
                     ,'summers'
                     ,'springs'
-//                    ,newusergroup
 ]
 
 
@@ -306,20 +308,18 @@ describe('openldap ldapjs_editor',function(){
                          }
                         ,function(u,barePassword,cb){
                              var req =  { __proto__: erq };
-                             req.params={'uid':'trouble',memberof:1}
+                             req.params={'uid':'trouble','memberof':true}
                              ctmldap.loadUser(req
                                              ,function(err,user){
                                                   should.not.exist(err)
                                                   should.exist(user)
-                                                  user.should.have.property('memberof')
-                                                  user.memberof.should.be.an.instanceOf(Array)
-                                                  user.memberof.should.include(ctmldap.getGroupDSN(newusergroup))
+                                                  user.should.not.have.property('memberof')
                                                   cb(err,user,barePassword)
                                               })
                          }
                         ,function(u,bp,cb){
                              var req =  { __proto__: erq };
-                             req.params={'uid':'trouble',memberof:1}
+                             req.params={'uid':'trouble',memberof:true}
                              ctmldap.deleteUser(req
                                                ,function(err){
                                                     should.not.exist(err)
@@ -629,7 +629,7 @@ describe('openldap ldapjs_editor',function(){
                                                   user_reload.should.have.property('memberof')
                                                   user_reload.memberof.should.be.an.instanceOf(Array)
                                                   user_reload.memberof.should.include(ctmldap.getGroupDSN('losers'))
-                                                  user_reload.memberof.should.include(ctmldap.getGroupDSN(newusergroup))
+                                                  user_reload.memberof.length.should.equal(1)
                                                   cb(null,user,group)
                                               })
                          }
@@ -647,17 +647,6 @@ describe('openldap ldapjs_editor',function(){
                              req.params={'uid':'luser',memberof:1}
                              ctmldap.deleteUser(req
                                                ,function(e,r){ cb(e) })
-                         }
-                        ,function(cb){
-                             var req =  { __proto__: erq };
-                             req.params={'cn':newusergroup}
-                             ctmldap.loadGroup(req
-                                              ,function(e,g){
-                                                   if(g !== undefined){
-                                                       g.uniquemember.should.not.include(ctmldap.getDSN('luser'))
-                                                   }
-                                                   cb();
-                                               })
                          }
                         ,function(cb){
                              var req =  { __proto__: erq };
@@ -933,4 +922,52 @@ describe('openldap ldapjs_editor',function(){
 
 
 });
+
+describe('getDSN',function(){
+    it('should return a DSN from a string'
+      ,function(done){
+           var dsn = ctmldap.getDSN('blarg')
+           dsn.should.equal('uid=blarg,'+user_dsn_postfix)
+           done()
+       })
+    it('should return a DSN from a DSN'
+      ,function(done){
+           var dsn = ctmldap.getDSN('blarg')
+           var twodsn = ctmldap.getDSN(dsn)
+           twodsn.should.equal(dsn)
+           done()
+       })
+    it('should return a DSN from an object'
+      ,function(done){
+           var dsn = ctmldap.getDSN('blarg')
+           var threedsn = ctmldap.getDSN({'uid':'blarg'})
+           threedsn.should.equal(dsn)
+           done()
+       })
+})
+
+describe('getGroupDSN',function(){
+    it('should return a group DSN from a string'
+      ,function(done){
+           var dsn = ctmldap.getGroupDSN('blarg')
+           dsn.should.equal('cn=blarg,'+group_dsn_postfix)
+           done()
+       })
+    it('should return a DSN from a DSN'
+      ,function(done){
+           var dsn = ctmldap.getGroupDSN('blarg')
+           var twodsn = ctmldap.getGroupDSN(dsn)
+           twodsn.should.equal(dsn)
+           done()
+       })
+    it('should return a DSN from an object'
+      ,function(done){
+           var dsn = ctmldap.getGroupDSN('blarg')
+           var threedsn = ctmldap.getGroupDSN({'cn':'blarg'})
+           threedsn.should.equal(dsn)
+           done()
+       })
+})
+
+
 
