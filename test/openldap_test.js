@@ -10,8 +10,11 @@ var request = require('supertest');
 var async = require('async')
 var _ = require('underscore')
 var env = process.env;
+
+var group_dsn_postfix = env.LDAP_GROUP_POSTFIX // for example 'ou=groups,dc=ctmlabs,dc=org'
+var user_dsn_postfix = env.LDAP_USER_POSTFIX // for example 'ou=people,dc=ctmlabs,dc=org'
+
 var test_email = env.LDAP_USER_EMAIL;
-var newusergroup = env.LDAP_NEW_USER_GROUP || 'newusers'
 
 var manager_dn = env.LDAP_DN;
 var manager_password = env.LDAP_PASS;
@@ -31,7 +34,6 @@ var delete_groups = [
                     ,'winters'
                     ,'summers'
                     ,'springs'
-//                    ,newusergroup
 ]
 
 
@@ -648,17 +650,6 @@ describe('openldap ldapjs_editor',function(){
                          }
                         ,function(cb){
                              var req =  { __proto__: erq };
-                             req.params={'cn':newusergroup}
-                             ctmldap.loadGroup(req
-                                              ,function(e,g){
-                                                   if(g !== undefined){
-                                                       g.uniquemember.should.not.include(ctmldap.getDSN('luser'))
-                                                   }
-                                                   cb();
-                                               })
-                         }
-                        ,function(cb){
-                             var req =  { __proto__: erq };
                              req.params={'uid':'luser',memberof:1}
                              ctmldap.loadUser(req
                                              ,function(err,user){
@@ -931,4 +922,52 @@ describe('openldap ldapjs_editor',function(){
 
 
 });
+
+describe('getDSN',function(){
+    it('should return a DSN from a string'
+      ,function(done){
+           var dsn = ctmldap.getDSN('blarg')
+           dsn.should.equal('uid=blarg,'+user_dsn_postfix)
+           done()
+       })
+    it('should return a DSN from a DSN'
+      ,function(done){
+           var dsn = ctmldap.getDSN('blarg')
+           var twodsn = ctmldap.getDSN(dsn)
+           twodsn.should.equal(dsn)
+           done()
+       })
+    it('should return a DSN from an object'
+      ,function(done){
+           var dsn = ctmldap.getDSN('blarg')
+           var threedsn = ctmldap.getDSN({'uid':'blarg'})
+           threedsn.should.equal(dsn)
+           done()
+       })
+})
+
+describe('getGroupDSN',function(){
+    it('should return a group DSN from a string'
+      ,function(done){
+           var dsn = ctmldap.getGroupDSN('blarg')
+           dsn.should.equal('cn=blarg,'+group_dsn_postfix)
+           done()
+       })
+    it('should return a DSN from a DSN'
+      ,function(done){
+           var dsn = ctmldap.getGroupDSN('blarg')
+           var twodsn = ctmldap.getGroupDSN(dsn)
+           twodsn.should.equal(dsn)
+           done()
+       })
+    it('should return a DSN from an object'
+      ,function(done){
+           var dsn = ctmldap.getGroupDSN('blarg')
+           var threedsn = ctmldap.getGroupDSN({'cn':'blarg'})
+           threedsn.should.equal(dsn)
+           done()
+       })
+})
+
+
 
